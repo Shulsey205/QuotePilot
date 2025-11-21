@@ -1,26 +1,71 @@
-<script>
-async function callQuote() {
-    const model = document.getElementById("modelSelect").value;
-    const partNumber = document.getElementById("partInput").value;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>QuotePilot DP Transmitter Quote</title>
+</head>
+<body>
+    <h1>QuotePilot DP Transmitter Quote</h1>
 
-    const payload = {
-        model: model,
-        part_number: partNumber
-    };
+    <label for="modelSelect">Model:</label>
+    <select id="modelSelect">
+        <option value="QPSAH200S">QPSAH200S differential pressure transmitter</option>
+        <option value="QPMAG">QPMAG mag meter</option>
+    </select>
 
-    try {
-        const response = await fetch("https://quotepilot-production.up.railway.app/quote", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+    <br /><br />
 
-        const data = await response.json();
-        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
-    } catch (err) {
-        document.getElementById("result").innerText = "Error calling API: " + err;
-    }
-}
-</script>
+    <label for="partInput">Part number:</label>
+    <input
+        type="text"
+        id="partInput"
+        size="60"
+        value="QPSAH200S-A-M-G-3-C-3-1-1-C-1-02"
+    />
+    <button id="quoteButton">Get quote</button>
+
+    <h2>Result</h2>
+    <pre id="result"></pre>
+
+    <script>
+        async function callQuote() {
+            const resultEl = document.getElementById("result");
+            resultEl.textContent = "Loading...";
+
+            const model = document.getElementById("modelSelect").value;
+            const partNumber = document.getElementById("partInput").value;
+
+            const payload = {
+                model: model,
+                part_number: partNumber
+            };
+
+            try {
+                const response = await fetch(window.location.origin + "/quote", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultEl.textContent =
+                        "Error from API (" + response.status + "): " + text;
+                    return;
+                }
+
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                resultEl.textContent = "Error calling API: " + err;
+            }
+        }
+
+        document
+            .getElementById("quoteButton")
+            .addEventListener("click", callQuote);
+    </script>
+</body>
+</html>
