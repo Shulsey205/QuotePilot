@@ -292,29 +292,3 @@ def quote_dp_part_number(part_number: str) -> dict:
 
 
 
-if __name__ == "__main__":
-    print("QuotePilot DP Transmitter engine ready.")
-    print("Enter a QPSAH200S part number to price.")
-    print("Press Enter with nothing typed to use the baseline configuration.")
-    print("Type q to quit.")
-    print()
-
-    while True:
-        raw = input("Part number: ").strip()
-
-        if raw.lower() in ("q", "quit", "exit"):
-            print("Exiting QuotePilot engine.")
-            break
-
-        # If the user just hits Enter, use the baseline configuration
-        if raw == "":
-            raw = "QPSAH200S-A-M-G-3-C-3-1-1-C-1-02"
-
-        try:
-            pricing = price_part_number(raw)
-            pretty_print_pricing(pricing)
-            print()
-        except PartNumberError as e:
-            print(f"Error: {e}")
-            print("Please try again.")
-            print()

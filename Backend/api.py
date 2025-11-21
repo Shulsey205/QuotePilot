@@ -5,7 +5,10 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from pathlib import Path
 
-from qp_dpt_engine import quote_dp_part_number
+from PartNumberEngine.registry import get_engine
+from qp_dpt_engine import PartNumberError
+
+VERSION = "0.0.1"
 
 
 
@@ -13,7 +16,9 @@ app = FastAPI()
 
 
 class QuoteRequest(BaseModel):
+    model: str = "QPSAH200S"   # default so old UI still works
     part_number: str
+
 
 
 class QuoteResponse(BaseModel):
@@ -37,44 +42,51 @@ class QuoteResponse(BaseModel):
 def health_check():
     return {"status": "ok", "message": "QuotePilot API is running"}
 
+@app.get("/version")
+def get_version():
+    return {"version": VERSION}
+
 
 @app.post("/quote", response_model=QuoteResponse)
 def quote_dp(request: QuoteRequest):
-    """
-    Take a part number string, run it through the QuotePilot engine,
-    and return structured pricing and error info.
-    """
-    engine_result = quote_dp_part_number(request.part_number)
+    try:
+        engine = get_engine(request.model or "QPSAH200S")
+  # for now we hardcode until we add model to the UI
+        result = engine.quote(request.part_number)
 
-    # success case
-    if engine_result.get("success"):
         return QuoteResponse(
             ok=True,
             part_number=request.part_number,
-            model=engine_result.get("model"),
-            base_price=engine_result.get("base_price"),
-            total_adders=engine_result.get("adders_total"),
-            final_price=engine_result.get("final_price"),
-            segment_breakdown=engine_result.get("segments", []),
+            model=result.get("model"),
+            base_price=result.get("base_price"),
+            total_adders=result.get("adders_total"),
+            final_price=result.get("final_price"),
+            segment_breakdown=result.get("segments", []),
+            message="Quote generated successfully",
         )
 
-    # error case
-    error = engine_result.get("error") or {}
+    except PartNumberError as exc:
+        # structured validation error from your DP engine
+        return QuoteResponse(
+            ok=False,
+            part_number=request.part_number,
+            error_type="validation_error",
+            message=str(exc),
+            segment=exc.segment,
+            invalid_code=exc.invalid_code,
+            valid_codes=exc.valid_codes,
+        )
 
-    return QuoteResponse(
-        ok=False,
-        part_number=request.part_number,
-        model=engine_result.get("model"),
-        base_price=engine_result.get("base_price"),
-        total_adders=engine_result.get("adders_total"),
-        final_price=engine_result.get("final_price"),
-        segment_breakdown=engine_result.get("segments", []),
-        error_type="validation_error",
-        message=error.get("message"),
-        segment=error.get("segment"),
-        invalid_code=error.get("invalid_code"),
-        valid_codes=error.get("valid_codes"),
-    )
+    except ValueError as exc:
+        # unsupported model (won’t happen yet unless you type wrong)
+        return QuoteResponse(
+            ok=False,
+            part_number=request.part_number,
+            error_type="unsupported_model",
+            message=str(exc),
+        )
+
+    
 @app.get("/ui", response_class=HTMLResponse)
 def quote_ui():
     html_path = Path(__file__).parent / "quote_ui.html"

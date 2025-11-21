@@ -7,6 +7,18 @@
 <body>
     <h1>QuotePilot DP Transmitter Quote</h1>
 
+  <label for="model">Model:</label>
+<select id="model">
+    <option value="QPSAH200S">QPSAH200S differential pressure transmitter</option>
+    <option value="QPMAG">QPMAG mag meter</option>
+</select>
+
+
+
+
+    <br /><br />
+
+    <!-- Part number input -->
     <label for="partNumber">Part number:</label>
     <input
         type="text"
@@ -22,9 +34,11 @@
 
     <script>
         async function submitQuote() {
+            const modelSelect = document.getElementById("model");
             const partNumberInput = document.getElementById("partNumber");
             const resultElement = document.getElementById("result");
 
+            const model = modelSelect.value;
             const partNumber = partNumberInput.value.trim();
 
             if (!partNumber) {
@@ -40,7 +54,10 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ part_number: partNumber })
+                    body: JSON.stringify({
+                        model: model,
+                        part_number: partNumber
+                    })
                 });
 
                 const data = await response.json();
