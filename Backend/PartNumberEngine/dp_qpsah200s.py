@@ -6,123 +6,277 @@ from .base_engine import PartNumberEngine, PartNumberError
 BASE_PRICE = 1000.0
 
 
-# Segment metadata and pricing rules for QPSAH200S
-# Order matters: index 0 = Segment 1, index 10 = Segment 11.
+# Master definition of all segments, options, and pricing for QPSAH200S.
+# This matches your combined spec + pricing PDF.
+MASTER_SEGMENTS: Dict[int, Dict[str, Any]] = {
+    1: {
+        "key": "output_signal_type",
+        "name": "Output signal type",
+        "options": {
+            "A": {
+                "description": "HART communication with 4–20 mA analog signal",
+                "adder": 0.0,
+                "default": True,
+            },
+            "B": {
+                "description": "Fieldbus digital communication",
+                "adder": 150.0,
+                "default": False,
+            },
+            "C": {
+                "description": "Profibus digital communication",
+                "adder": 150.0,
+                "default": False,
+            },
+        },
+    },
+    2: {
+        "key": "span_range",
+        "name": "Span range",
+        "options": {
+            "M": {
+                "description": "4 to 400 inches of water column",
+                "adder": 0.0,
+                "default": True,
+            },
+            "L": {
+                "description": "2 to 40 inches of water column",
+                "adder": 100.0,
+                "default": False,
+            },
+            "D": {
+                "description": "2 to 20 inches of water column",
+                "adder": 150.0,
+                "default": False,
+            },
+            "F": {
+                "description": "20 to 2000 inches of water column",
+                "adder": 200.0,
+                "default": False,
+            },
+        },
+    },
+    3: {
+        "key": "wetted_parts_material",
+        "name": "Wetted parts material",
+        "options": {
+            "G": {
+                "description": "316 stainless steel wetted parts",
+                "adder": 0.0,
+                "default": True,
+            },
+            "A": {
+                "description": "Hastelloy wetted parts",
+                "adder": 200.0,
+                "default": False,
+            },
+            "B": {
+                "description": "Cover flange material",
+                "adder": 50.0,
+                "default": False,
+            },
+            "D": {
+                "description": "Titanium wetted parts",
+                "adder": 300.0,
+                "default": False,
+            },
+        },
+    },
+    4: {
+        "key": "process_connection",
+        "name": "Process connection",
+        "options": {
+            "3": {
+                "description": "1/2 inch NPT female process connection",
+                "adder": 0.0,
+                "default": True,
+            },
+            "2": {
+                "description": "1/4 inch NPT female process connection",
+                "adder": 0.0,
+                "default": False,
+            },
+            "1": {
+                "description": "No process connection",
+                "adder": 0.0,
+                "default": False,
+            },
+        },
+    },
+    5: {
+        "key": "housing_material",
+        "name": "Housing material",
+        "options": {
+            "C": {
+                "description": "316 stainless steel housing",
+                "adder": 0.0,
+                "default": True,
+            },
+            "B": {
+                "description": "Cast aluminum alloy with corrosion resistance",
+                "adder": 100.0,
+                "default": False,
+            },
+            "A": {
+                "description": "Cast aluminum housing",
+                "adder": 0.0,
+                "default": False,
+            },
+        },
+    },
+    6: {
+        "key": "installation_orientation",
+        "name": "Installation orientation",
+        "options": {
+            "3": {
+                "description": "Universal flange installation",
+                "adder": 0.0,
+                "default": True,
+            },
+            "1": {
+                "description": "Horizontal installation",
+                "adder": 0.0,
+                "default": False,
+            },
+            "2": {
+                "description": "Vertical installation",
+                "adder": 0.0,
+                "default": False,
+            },
+            "4": {
+                "description": "Vertical with left side high pressure",
+                "adder": 50.0,
+                "default": False,
+            },
+        },
+    },
+    7: {
+        "key": "electrical_connection",
+        "name": "Electrical connection",
+        "options": {
+            "1": {
+                "description": "1/2 inch NPT female electrical connection",
+                "adder": 0.0,
+                "default": True,
+            },
+            "2": {
+                "description": "G 1/2 inch female electrical connection",
+                "adder": 50.0,
+                "default": False,
+            },
+            "3": {
+                "description": "1/4 inch NPT female electrical connection",
+                "adder": 0.0,
+                "default": False,
+            },
+        },
+    },
+    8: {
+        "key": "display",
+        "name": "Display",
+        "options": {
+            "1": {
+                "description": "With display",
+                "adder": 0.0,
+                "default": True,
+            },
+            "0": {
+                "description": "Without display",
+                "adder": 0.0,
+                "default": False,
+            },
+        },
+    },
+    9: {
+        "key": "mounting_bracket",
+        "name": "Mounting bracket",
+        "options": {
+            "C": {
+                "description": "Universal bracket",
+                "adder": 0.0,
+                "default": True,
+            },
+            "A": {
+                "description": "304 stainless bracket",
+                "adder": 0.0,
+                "default": False,
+            },
+            "B": {
+                "description": "316 stainless bracket",
+                "adder": 50.0,
+                "default": False,
+            },
+        },
+    },
+    10: {
+        "key": "area_classification",
+        "name": "Area classification",
+        "options": {
+            "1": {
+                "description": "General purpose",
+                "adder": 0.0,
+                "default": True,
+            },
+            "2": {
+                "description": "Explosion proof",
+                "adder": 200.0,
+                "default": False,
+            },
+            "3": {
+                "description": "Class I Div 2",
+                "adder": 150.0,
+                "default": False,
+            },
+            "4": {
+                "description": "Canadian specifications",
+                "adder": 100.0,
+                "default": False,
+            },
+        },
+    },
+    11: {
+        "key": "optional_features",
+        "name": "Optional features",
+        "options": {
+            "02": {
+                "description": "Memory card",
+                "adder": 0.0,
+                "default": True,
+            },
+            "01": {
+                "description": "Signal cable",
+                "adder": 50.0,
+                "default": False,
+            },
+            "03": {
+                "description": "High corrosion resistance coating",
+                "adder": 150.0,
+                "default": False,
+            },
+            "04": {
+                "description": "Unlimited software updates",
+                "adder": 200.0,
+                "default": False,
+            },
+        },
+    },
+}
+
+
+# Derived list structure used by the engine logic below
 SEGMENTS: List[Dict[str, Any]] = [
     {
-        "index": 1,
-        "name": "Output signal type",
+        "index": index,
+        "name": seg["name"],
         "codes": {
-            # Spec + pricing: A baseline, B/C +150
-            "A": {"description": "HART communication with 4–20 mA analog signal", "adder": 0.0},
-            "B": {"description": "Fieldbus digital communication", "adder": 150.0},
-            "C": {"description": "Profibus digital communication", "adder": 150.0},
+            code: {
+                "description": opt["description"],
+                "adder": float(opt["adder"]),
+            }
+            for code, opt in seg["options"].items()
         },
-    },
-    {
-        "index": 2,
-        "name": "Span range",
-        "codes": {
-            # Pricing: M baseline, others add
-            "M": {"description": "4 to 400 inches of water column", "adder": 0.0},
-            "L": {"description": "2 to 40 inches of water column", "adder": 100.0},
-            "D": {"description": "2 to 20 inches of water column", "adder": 150.0},
-            "F": {"description": "20 to 2000 inches of water column", "adder": 200.0},
-        },
-    },
-    {
-        "index": 3,
-        "name": "Wetted parts material",
-        "codes": {
-            # Pricing: G baseline
-            "G": {"description": "316 stainless steel wetted parts", "adder": 0.0},
-            "A": {"description": "Hastelloy wetted parts", "adder": 200.0},
-            "B": {"description": "Cover flange material", "adder": 50.0},
-            "D": {"description": "Titanium wetted parts", "adder": 300.0},
-        },
-    },
-    {
-        "index": 4,
-        "name": "Process connection",
-        "codes": {
-            # Pricing: 3 baseline, 1/2 zero
-            "3": {"description": "1/2 inch NPT female process connection", "adder": 0.0},
-            "2": {"description": "1/4 inch NPT female process connection", "adder": 0.0},
-            "1": {"description": "No process connection", "adder": 0.0},
-        },
-    },
-    {
-        "index": 5,
-        "name": "Housing material",
-        "codes": {
-            # Pricing: C baseline
-            "C": {"description": "316 stainless steel housing", "adder": 0.0},
-            "B": {"description": "Cast aluminum alloy with corrosion resistance", "adder": 100.0},
-            "A": {"description": "Cast aluminum housing", "adder": 0.0},
-        },
-    },
-    {
-        "index": 6,
-        "name": "Installation orientation",
-        "codes": {
-            # Pricing: 3 baseline, 4 +50
-            "3": {"description": "Universal flange installation", "adder": 0.0},
-            "1": {"description": "Horizontal installation", "adder": 0.0},
-            "2": {"description": "Vertical installation", "adder": 0.0},
-            "4": {"description": "Vertical with left side high pressure", "adder": 50.0},
-        },
-    },
-    {
-        "index": 7,
-        "name": "Electrical connection",
-        "codes": {
-            # Pricing: 1 baseline, 2 +50
-            "1": {"description": "1/2 inch NPT female electrical connection", "adder": 0.0},
-            "2": {"description": "G 1/2 inch female electrical connection", "adder": 50.0},
-            "3": {"description": "1/4 inch NPT female electrical connection", "adder": 0.0},
-        },
-    },
-    {
-        "index": 8,
-        "name": "Display",
-        "codes": {
-            # Pricing: 1 baseline, 0 zero
-            "1": {"description": "With display", "adder": 0.0},
-            "0": {"description": "Without display", "adder": 0.0},
-        },
-    },
-    {
-        "index": 9,
-        "name": "Mounting bracket",
-        "codes": {
-            # Pricing: C baseline, B +50
-            "C": {"description": "Universal bracket", "adder": 0.0},
-            "A": {"description": "304 stainless bracket", "adder": 0.0},
-            "B": {"description": "316 stainless bracket", "adder": 50.0},
-        },
-    },
-    {
-        "index": 10,
-        "name": "Area classification",
-        "codes": {
-            # Pricing: 1 baseline
-            "1": {"description": "General purpose", "adder": 0.0},
-            "2": {"description": "Explosion proof", "adder": 200.0},
-            "3": {"description": "Class I Div 2", "adder": 150.0},
-            "4": {"description": "Canadian specifications", "adder": 100.0},
-        },
-    },
-    {
-        "index": 11,
-        "name": "Optional features",
-        "codes": {
-            # Pricing: 02 baseline
-            "02": {"description": "Memory card", "adder": 0.0},
-            "01": {"description": "Signal cable", "adder": 50.0},
-            "03": {"description": "High corrosion resistance coating", "adder": 150.0},
-            "04": {"description": "Unlimited software updates", "adder": 200.0},
-        },
-    },
+    }
+    for index, seg in sorted(MASTER_SEGMENTS.items())
 ]
 
 
@@ -180,8 +334,7 @@ class QPSAH200SEngine(PartNumberEngine):
             seg_name = seg_def["name"]
             codes_map = seg_def["codes"]
 
-            # Segment 11 can have codes like "02", which are fine as-is.
-            # We do not strip leading zeros.
+            # Segment 11 uses codes like "02" which we keep as-is
             if code not in codes_map:
                 valid_codes = list(codes_map.keys())
                 raise PartNumberError(
