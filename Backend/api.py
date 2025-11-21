@@ -8,6 +8,19 @@ from pathlib import Path
 from .PartNumberEngine.registry import get_engine
 from .PartNumberEngine.base_engine import PartNumberError
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 VERSION = "0.0.1"
 
