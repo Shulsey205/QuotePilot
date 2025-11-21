@@ -10,10 +10,12 @@ from .PartNumberEngine.registry import get_engine
 from .PartNumberEngine.base_engine import PartNumberError
 
 
-# Single FastAPI app
+# ==========================================================
+#  FastAPI APP + CORS
+# ==========================================================
+
 app = FastAPI()
 
-# Allow browser JS (your /ui page) to call /quote
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,8 +27,11 @@ app.add_middleware(
 VERSION = "0.0.1"
 
 
+# ==========================================================
+#  REQUEST / RESPONSE MODELS
+# ==========================================================
+
 class QuoteRequest(BaseModel):
-    # default so old UI still works
     model: str = "QPSAH200S"
     part_number: str
 
@@ -40,13 +45,25 @@ class QuoteResponse(BaseModel):
     final_price: Optional[float] = None
     segment_breakdown: List[dict] = []
 
-    # error details when something is wrong
     error_type: Optional[str] = None
     message: Optional[str] = None
     segment: Optional[str] = None
     invalid_code: Optional[str] = None
     valid_codes: Optional[List[str]] = None
 
+
+# ==========================================================
+#  SUPPORT: LOAD UI HTML
+# ==========================================================
+
+def _load_ui_html() -> str:
+    html_path = Path(__file__).parent / "quote_ui.html"
+    return html_path.read_text(encoding="utf-8")
+
+
+# ==========================================================
+#  ROUTES
+# ==========================================================
 
 @app.get("/health")
 def health_check():
@@ -76,7 +93,6 @@ def quote_dp(request: QuoteRequest):
         )
 
     except PartNumberError as exc:
-        # structured validation error from your engine
         return QuoteResponse(
             ok=False,
             part_number=request.part_number,
@@ -88,7 +104,6 @@ def quote_dp(request: QuoteRequest):
         )
 
     except ValueError as exc:
-        # unsupported model
         return QuoteResponse(
             ok=False,
             part_number=request.part_number,
@@ -97,7 +112,15 @@ def quote_dp(request: QuoteRequest):
         )
 
 
+# ==========================================================
+#  UI ROUTES
+# ==========================================================
+
 @app.get("/ui", response_class=HTMLResponse)
 def quote_ui():
-    html_path = Path(__file__).parent / "quote_ui.html"
-    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content=_load_ui_html())
+
+
+@app.get("/", response_class=HTMLResponse)
+def root():
+    return HTMLResponse(content=_load_ui_html())
