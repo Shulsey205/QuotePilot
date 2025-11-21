@@ -5,8 +5,9 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from pathlib import Path
 
-from PartNumberEngine.registry import get_engine
-from qp_dpt_engine import PartNumberError
+from .PartNumberEngine.registry import get_engine
+from .PartNumberEngine.base_engine import PartNumberError
+
 
 VERSION = "0.0.1"
 

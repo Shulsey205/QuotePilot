@@ -2,6 +2,21 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 
+class PartNumberError(Exception):
+    """
+    Structured error for invalid part numbers.
+    Carries segment, invalid code, and list of valid codes.
+    """
+    def __init__(self, message: str,
+                 segment: str | None = None,
+                 invalid_code: str | None = None,
+                 valid_codes: list[str] | None = None):
+        super().__init__(message)
+        self.segment = segment
+        self.invalid_code = invalid_code
+        self.valid_codes = valid_codes or []
+
+
 class PartNumberEngine(ABC):
     """
     Base class for all QuotePilot product engines.
@@ -22,8 +37,9 @@ class PartNumberEngine(ABC):
             "normalized_part_number": str,
             "segments": {...},
             "base_price": float,
-            "adders": [...],
-            "total_price": float
+            "adders_total": float,
+            "final_price": float,
+            "segments": [ ... ]
           }
 
         The method can raise PartNumberError when validation fails.
