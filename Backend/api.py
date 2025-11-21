@@ -2,16 +2,18 @@ from typing import List, Optional
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 
 from .PartNumberEngine.registry import get_engine
 from .PartNumberEngine.base_engine import PartNumberError
 
-from fastapi.middleware.cors import CORSMiddleware
 
+# Single FastAPI app
 app = FastAPI()
 
+# Allow browser JS (your /ui page) to call /quote
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,19 +22,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
 VERSION = "0.0.1"
 
 
-
-app = FastAPI()
-
-
 class QuoteRequest(BaseModel):
-    model: str = "QPSAH200S"   # default so old UI still works
+    # default so old UI still works
+    model: str = "QPSAH200S"
     part_number: str
-
 
 
 class QuoteResponse(BaseModel):
@@ -56,6 +52,7 @@ class QuoteResponse(BaseModel):
 def health_check():
     return {"status": "ok", "message": "QuotePilot API is running"}
 
+
 @app.get("/version")
 def get_version():
     return {"version": VERSION}
@@ -65,7 +62,6 @@ def get_version():
 def quote_dp(request: QuoteRequest):
     try:
         engine = get_engine(request.model or "QPSAH200S")
-  # for now we hardcode until we add model to the UI
         result = engine.quote(request.part_number)
 
         return QuoteResponse(
@@ -80,7 +76,7 @@ def quote_dp(request: QuoteRequest):
         )
 
     except PartNumberError as exc:
-        # structured validation error from your DP engine
+        # structured validation error from your engine
         return QuoteResponse(
             ok=False,
             part_number=request.part_number,
@@ -92,7 +88,7 @@ def quote_dp(request: QuoteRequest):
         )
 
     except ValueError as exc:
-        # unsupported model (won’t happen yet unless you type wrong)
+        # unsupported model
         return QuoteResponse(
             ok=False,
             part_number=request.part_number,
@@ -100,7 +96,7 @@ def quote_dp(request: QuoteRequest):
             message=str(exc),
         )
 
-    
+
 @app.get("/ui", response_class=HTMLResponse)
 def quote_ui():
     html_path = Path(__file__).parent / "quote_ui.html"
