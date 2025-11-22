@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from .base_engine import PartNumberEngine, PartNumberError
+from .base_engine import PartNumberEngine, PartNumberError, register_engine
 
 
 BASE_PRICE = 1000.0
@@ -280,6 +280,7 @@ SEGMENTS: List[Dict[str, Any]] = [
 ]
 
 
+@register_engine
 class QPSAH200SEngine(PartNumberEngine):
     """
     Engine for QPSAH200S differential pressure transmitter.
