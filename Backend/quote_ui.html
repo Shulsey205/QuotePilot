@@ -26,6 +26,13 @@
         font-size: 24px;
       }
 
+      h2 {
+        margin-top: 24px;
+        font-size: 18px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 16px;
+      }
+
       label {
         display: block;
         margin-bottom: 4px;
@@ -33,7 +40,8 @@
       }
 
       select,
-      input[type="text"] {
+      input[type="text"],
+      textarea {
         width: 100%;
         padding: 8px 10px;
         margin-bottom: 12px;
@@ -41,6 +49,11 @@
         border: 1px solid #ccc;
         font-size: 14px;
         box-sizing: border-box;
+      }
+
+      textarea {
+        min-height: 70px;
+        resize: vertical;
       }
 
       button {
@@ -101,13 +114,22 @@
       th {
         background: #f9fafb;
       }
+
+      .section-note {
+        font-size: 13px;
+        color: #4b5563;
+        margin-bottom: 8px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>QuotePilot Demo</h1>
-      <p style="font-size: 14px; margin-top: 4px;">
-        Select a model, enter or adjust the part number, and get a structured quote result from the backend engine.
+
+      <!-- Direct part-number quote section -->
+      <h2>1. Direct part-number quote</h2>
+      <p class="section-note">
+        Select a model and enter a full part number. This hits <code>/quote</code> directly.
       </p>
 
       <form id="quote-form">
@@ -137,6 +159,29 @@
       <div id="error-box" class="error" style="display: none;"></div>
       <div id="result-box" class="result" style="display: none;"></div>
       <div id="segments-box" class="result" style="display: none;"></div>
+
+      <!-- Natural language quote section -->
+      <h2>2. Natural language quote (early prototype)</h2>
+      <p class="section-note">
+        Type what you need in plain language. This hits <code>/nl_quote</code>, which picks a model, starts from
+        defaults, overrides what you mention, and returns the generated part number and price.
+        Example:
+        “I need a QPMAG with class 150 flanges, 2 inch line size, everything else standard.”
+      </p>
+
+      <form id="nl-form">
+        <label for="nl_text">Request</label>
+        <textarea
+          id="nl_text"
+          name="nl_text"
+          placeholder="I need a QPMAG with class 150 flanges, everything else standard."
+        ></textarea>
+        <button type="submit" id="nl-button">Get quote from text</button>
+      </form>
+
+      <div id="nl-error-box" class="error" style="display: none;"></div>
+      <div id="nl-result-box" class="result" style="display: none;"></div>
+      <div id="nl-segments-box" class="result" style="display: none;"></div>
     </div>
 
     <script>
@@ -181,7 +226,6 @@
             select.appendChild(opt);
           });
 
-          // Try to keep previous selection if it still exists
           if (data.models.includes(current)) {
             select.value = current;
           }
@@ -280,7 +324,6 @@
             return;
           }
 
-          // Summary text
           let text = "";
           text += "Model: " + (data.model || "") + "\n";
           text += "Input part number: " + (data.input_part_number || "") + "\n";
@@ -292,7 +335,6 @@
           resultBox.textContent = text;
           resultBox.style.display = "block";
 
-          // Segment breakdown table
           const segmentsHtml = buildSegmentsTable(data.segments || []);
           if (segmentsHtml) {
             segmentsBox.innerHTML = segmentsHtml;
@@ -307,8 +349,91 @@
         }
       }
 
+      async function submitNaturalLanguageQuote(event) {
+        event.preventDefault();
+
+        const btn = document.getElementById("nl-button");
+        const errorBox = document.getElementById("nl-error-box");
+        const resultBox = document.getElementById("nl-result-box");
+        const segmentsBox = document.getElementById("nl-segments-box");
+
+        errorBox.style.display = "none";
+        resultBox.style.display = "none";
+        segmentsBox.style.display = "none";
+        errorBox.textContent = "";
+        resultBox.textContent = "";
+        segmentsBox.innerHTML = "";
+
+        const text = document.getElementById("nl_text").value.trim();
+
+        if (!text) {
+          errorBox.textContent = "Please enter a natural language request.";
+          errorBox.style.display = "block";
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Quoting from text...";
+
+        try {
+          const res = await fetch("/nl_quote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: text }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || data.ok === false) {
+            let msg = data.error || data.detail || "Unknown error";
+            if (data.segment) {
+              msg += "\nSegment: " + data.segment;
+            }
+            if (data.invalid_code) {
+              msg += "\nInvalid code: " + data.invalid_code;
+            }
+            if (Array.isArray(data.valid_codes) && data.valid_codes.length > 0) {
+              msg += "\nValid codes: " + data.valid_codes.join(", ");
+            }
+            errorBox.textContent = msg;
+            errorBox.style.display = "block";
+            return;
+          }
+
+          let textOut = "";
+          textOut += "Source: " + (data.source || "natural_language") + "\n";
+          textOut += "Model: " + (data.model || "") + "\n";
+          textOut += "Input text: " + (data.input_text || "") + "\n";
+          textOut += "Generated part number: " + (data.generated_part_number || "") + "\n";
+          textOut += "Normalized part number: " + (data.normalized_part_number || "") + "\n";
+          textOut += "Base price: " + data.base_price + "\n";
+          textOut += "Adders total: " + data.adders_total + "\n";
+          textOut += "Final price: " + data.final_price + "\n";
+
+          resultBox.textContent = textOut;
+          resultBox.style.display = "block";
+
+          const segmentsHtml = buildSegmentsTable(data.segments || []);
+          if (segmentsHtml) {
+            segmentsBox.innerHTML = segmentsHtml;
+            segmentsBox.style.display = "block";
+          }
+        } catch (err) {
+          errorBox.textContent = "Request failed: " + err;
+          errorBox.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Get quote from text";
+        }
+      }
+
       document.getElementById("quote-form").addEventListener("submit", submitQuote);
       document.getElementById("model").addEventListener("change", applyDefaultPartNumber);
+
+      document.getElementById("nl-form").addEventListener("submit", submitNaturalLanguageQuote);
+
       loadEngines();
     </script>
   </body>
