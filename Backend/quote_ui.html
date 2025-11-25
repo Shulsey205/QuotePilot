@@ -1,440 +1,442 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>QuotePilot Demo UI</title>
+<head>
+    <meta charset="UTF-8" />
+    <title>QuotePilot Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        margin: 0;
-        padding: 24px;
-        background: #f5f5f7;
-      }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: #e5e7eb;
+        }
 
-      .container {
-        max-width: 900px;
-        margin: 0 auto;
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-      }
+        .page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px 48px;
+        }
 
-      h1 {
-        margin-top: 0;
-        font-size: 24px;
-      }
+        header {
+            margin-bottom: 24px;
+        }
 
-      h2 {
-        margin-top: 24px;
-        font-size: 18px;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 16px;
-      }
+        header h1 {
+            font-size: 1.75rem;
+            margin: 0 0 4px;
+        }
 
-      label {
-        display: block;
-        margin-bottom: 4px;
-        font-size: 14px;
-      }
+        header p {
+            margin: 0;
+            color: #9ca3af;
+            font-size: 0.95rem;
+        }
 
-      select,
-      input[type="text"],
-      textarea {
-        width: 100%;
-        padding: 8px 10px;
-        margin-bottom: 12px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-        box-sizing: border-box;
-      }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+            gap: 20px;
+        }
 
-      textarea {
-        min-height: 70px;
-        resize: vertical;
-      }
+        @media (max-width: 800px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
 
-      button {
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        background: #2563eb;
-        color: #ffffff;
-      }
+        .card {
+            background: #020617;
+            border-radius: 12px;
+            padding: 16px 16px 20px;
+            border: 1px solid #1f2937;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
 
-      button:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
+        .card h2 {
+            margin: 0 0 12px;
+            font-size: 1.1rem;
+        }
 
-      .row {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
 
-      .row > div {
-        flex: 1 1 250px;
-      }
+        select,
+        input,
+        textarea {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #4b5563;
+            padding: 8px 10px;
+            font-size: 0.95rem;
+            background: #020617;
+            color: #e5e7eb;
+            box-sizing: border-box;
+        }
 
-      .result,
-      .error {
-        margin-top: 20px;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 13px;
-        white-space: pre-wrap;
-        background: #f3f4f6;
-      }
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
 
-      .error {
-        background: #fef2f2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-      }
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 1px #22c55e33;
+        }
 
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin-top: 12px;
-        font-size: 13px;
-      }
+        .field {
+            margin-bottom: 12px;
+        }
 
-      th,
-      td {
-        border: 1px solid #e5e7eb;
-        padding: 6px 8px;
-        text-align: left;
-      }
+        .hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
 
-      th {
-        background: #f9fafb;
-      }
+        .button-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
 
-      .section-note {
-        font-size: 13px;
-        color: #4b5563;
-        margin-bottom: 8px;
-      }
+        button {
+            border-radius: 999px;
+            border: none;
+            padding: 8px 18px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: #22c55e;
+            color: #020617;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .status {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .price {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #22c55e;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #111827;
+            border: 1px solid #1f2937;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-right: 6px;
+        }
+
+        .result-meta {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            font-size: 0.78rem;
+        }
+
+        th,
+        td {
+            padding: 6px 4px;
+            text-align: left;
+        }
+
+        th {
+            border-bottom: 1px solid #1f2937;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        tr:nth-child(even) td {
+            background: #020617;
+        }
+
+        .disclaimer {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .error {
+            font-size: 0.8rem;
+            color: #f97373;
+            margin-top: 8px;
+        }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>QuotePilot Demo</h1>
+</head>
+<body>
+<div class="page">
+    <header>
+        <h1>QuotePilot Demo</h1>
+        <p>
+            Turn industrial instrument requests into complete part numbers and pricing, using your rules.
+        </p>
+    </header>
 
-      <!-- Direct part-number quote section -->
-      <h2>1. Direct part-number quote</h2>
-      <p class="section-note">
-        Select a model and enter a full part number. This hits <code>/quote</code> directly.
-      </p>
+    <div class="layout">
+        <section class="card">
+            <h2>Request a quote</h2>
 
-      <form id="quote-form">
-        <div class="row">
-          <div>
-            <label for="model">Model</label>
-            <select id="model" name="model">
-              <!-- Fallback defaults; script will try to load live engine list -->
-              <option value="QPSAH200S">QPSAH200S (DP transmitter)</option>
-              <option value="QPMAG">QPMAG (Magnetic flowmeter)</option>
-            </select>
-          </div>
-          <div>
-            <label for="part_number">Part number</label>
-            <input
-              type="text"
-              id="part_number"
-              name="part_number"
-              placeholder="QPSAH200S-A-M-G-3-C-3-1-1-C-1-02 or QPMAG-1-C-SR-316-150-R-4-0-00-00"
-            />
-          </div>
-        </div>
+            <div class="field">
+                <label for="model">Model</label>
+                <select id="model">
+                    <option value="QPSAH200S">QPSAH200S – DP Transmitter</option>
+                    <option value="QPMAG">QPMAG – Mag Meter</option>
+                </select>
+            </div>
 
-        <button type="submit" id="quote-button">Get quote</button>
-      </form>
+            <div class="field">
+                <label for="mode">Input type</label>
+                <select id="mode">
+                    <option value="part_number">Exact part number</option>
+                    <option value="natural_language">Natural language request</option>
+                </select>
+            </div>
 
-      <div id="error-box" class="error" style="display: none;"></div>
-      <div id="result-box" class="result" style="display: none;"></div>
-      <div id="segments-box" class="result" style="display: none;"></div>
+            <div class="field" id="part-number-field">
+                <label for="part-number">Part number</label>
+                <input
+                    id="part-number"
+                    type="text"
+                    value="QPSAH200S-A-M-G-3-C-3-1-1-C-1-02"
+                />
+                <div class="hint">
+                    You can paste or edit any valid QuotePilot part number.
+                </div>
+            </div>
 
-      <!-- Natural language quote section -->
-      <h2>2. Natural language quote (early prototype)</h2>
-      <p class="section-note">
-        Type what you need in plain language. This hits <code>/nl_quote</code>, which picks a model, starts from
-        defaults, overrides what you mention, and returns the generated part number and price.
-        Example:
-        “I need a QPMAG with class 150 flanges, 2 inch line size, everything else standard.”
-      </p>
+            <div class="field" id="nl-field" style="display:none;">
+                <label for="request-text">Natural language request</label>
+                <textarea id="request-text"
+                          placeholder="For example: 0–200 inH₂O DP transmitter, 4–20 mA, 3-valve manifold, 316SS, remote mount…"></textarea>
+                <div class="hint">
+                    QuotePilot will choose a compatible configuration and build the part number for you.
+                </div>
+            </div>
 
-      <form id="nl-form">
-        <label for="nl_text">Request</label>
-        <textarea
-          id="nl_text"
-          name="nl_text"
-          placeholder="I need a QPMAG with class 150 flanges, everything else standard."
-        ></textarea>
-        <button type="submit" id="nl-button">Get quote from text</button>
-      </form>
+            <div class="button-row">
+                <button id="quote-button">Get quote</button>
+                <span class="status" id="status-text"></span>
+            </div>
 
-      <div id="nl-error-box" class="error" style="display: none;"></div>
-      <div id="nl-result-box" class="result" style="display: none;"></div>
-      <div id="nl-segments-box" class="result" style="display: none;"></div>
+            <div id="error-text" class="error"></div>
+        </section>
+
+        <section class="card">
+            <div class="results-header">
+                <h2>Quote result</h2>
+                <div class="price" id="price-display">—</div>
+            </div>
+
+            <div class="result-meta" id="result-meta">
+                No quote yet. Submit a request to see full pricing and configuration details.
+            </div>
+
+            <div id="pills"></div>
+
+            <div id="breakdown-container">
+                <table id="breakdown-table" style="display:none;">
+                    <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Adder</th>
+                    </tr>
+                    </thead>
+                    <tbody id="breakdown-body"></tbody>
+                </table>
+            </div>
+
+            <div class="disclaimer">
+                Demo only: pricing and options shown here are sample data, not production pricing.
+            </div>
+        </section>
     </div>
+</div>
 
-    <script>
-      // Known good "standard" part numbers per model
-      const DEFAULT_PARTS = {
-        QPSAH200S: "QPSAH200S-A-M-G-3-C-3-1-1-C-1-02",
-        QPMAG: "QPMAG-1-C-SR-316-150-R-4-0-00-00",
-      };
+<script>
+    const modelSelect = document.getElementById("model");
+    const modeSelect = document.getElementById("mode");
+    const partNumberField = document.getElementById("part-number-field");
+    const nlField = document.getElementById("nl-field");
+    const quoteButton = document.getElementById("quote-button");
+    const statusText = document.getElementById("status-text");
+    const errorText = document.getElementById("error-text");
 
-      function applyDefaultPartNumber() {
-        const modelSelect = document.getElementById("model");
-        const partInput = document.getElementById("part_number");
-        const model = (modelSelect.value || "").trim();
+    const priceDisplay = document.getElementById("price-display");
+    const resultMeta = document.getElementById("result-meta");
+    const pills = document.getElementById("pills");
+    const breakdownTable = document.getElementById("breakdown-table");
+    const breakdownBody = document.getElementById("breakdown-body");
 
-        if (DEFAULT_PARTS[model]) {
-          partInput.value = DEFAULT_PARTS[model];
+    modeSelect.addEventListener("change", () => {
+        if (modeSelect.value === "part_number") {
+            partNumberField.style.display = "";
+            nlField.style.display = "none";
+        } else {
+            partNumberField.style.display = "none";
+            nlField.style.display = "";
         }
-      }
+    });
 
-      async function loadEngines() {
+    function renderQuoteResult(data) {
+        // Expected shape (what your engine already returns):
+        // {
+        //   ok: true,
+        //   model: "QPSAH200S",
+        //   part_number: "QPSAH200S-A-M-...",
+        //   base_price: 1000,
+        //   total_adders: 150,
+        //   final_price: 1150,
+        //   segments: [{ segment, code, description, adder }, ...]
+        // }
+
+        if (!data || data.ok === false) {
+            priceDisplay.textContent = "—";
+            resultMeta.textContent = data && data.message
+                ? data.message
+                : "Unable to calculate a quote for this request.";
+            breakdownTable.style.display = "none";
+            pills.innerHTML = "";
+            return;
+        }
+
+        const finalPrice = data.final_price != null ? data.final_price : null;
+        const basePrice = data.base_price != null ? data.base_price : null;
+        const adders = data.total_adders != null ? data.total_adders : null;
+
+        priceDisplay.textContent =
+            finalPrice != null ? `$${finalPrice.toLocaleString()}` : "—";
+
+        const modelText = data.model || modelSelect.value;
+        const pnText = data.part_number || "";
+
+        resultMeta.textContent = pnText
+            ? `${modelText} – ${pnText}`
+            : modelText;
+
+        pills.innerHTML = "";
+
+        if (basePrice != null) {
+            const pill = document.createElement("span");
+            pill.className = "pill";
+            pill.textContent = `Base: $${basePrice.toLocaleString()}`;
+            pills.appendChild(pill);
+        }
+
+        if (adders != null) {
+            const pill = document.createElement("span");
+            pill.className = "pill";
+            pill.textContent = `Adders: $${adders.toLocaleString()}`;
+            pills.appendChild(pill);
+        }
+
+        if (data.segments && Array.isArray(data.segments) && data.segments.length) {
+            breakdownBody.innerHTML = "";
+            data.segments.forEach(seg => {
+                const tr = document.createElement("tr");
+                const tdSegment = document.createElement("td");
+                const tdCode = document.createElement("td");
+                const tdDesc = document.createElement("td");
+                const tdAdder = document.createElement("td");
+
+                tdSegment.textContent = seg.segment ?? "";
+                tdCode.textContent = seg.code ?? "";
+                tdDesc.textContent = seg.description ?? "";
+                tdAdder.textContent =
+                    seg.adder != null ? `$${seg.adder.toLocaleString()}` : "";
+
+                tr.appendChild(tdSegment);
+                tr.appendChild(tdCode);
+                tr.appendChild(tdDesc);
+                tr.appendChild(tdAdder);
+                breakdownBody.appendChild(tr);
+            });
+            breakdownTable.style.display = "";
+        } else {
+            breakdownTable.style.display = "none";
+            breakdownBody.innerHTML = "";
+        }
+    }
+
+    quoteButton.addEventListener("click", async () => {
+        errorText.textContent = "";
+        statusText.textContent = "Sending request…";
+        quoteButton.disabled = true;
+
+        const model = modelSelect.value;
+        const mode = modeSelect.value;
+        const partNumberInput = document.getElementById("part-number").value.trim();
+        const requestText = document.getElementById("request-text").value.trim();
+
+        let payload = { model };
+
+        if (mode === "part_number") {
+            payload.mode = "part_number";
+            payload.part_number = partNumberInput;
+        } else {
+            payload.mode = "natural_language";
+            payload.request_text = requestText;
+        }
+
         try {
-          const res = await fetch("/engines");
-          if (!res.ok) {
-            applyDefaultPartNumber();
-            return;
-          }
-          const data = await res.json();
-          if (!data || !Array.isArray(data.models)) {
-            applyDefaultPartNumber();
-            return;
-          }
+            const response = await fetch("/quote", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
 
-          const select = document.getElementById("model");
-          const current = select.value;
-
-          select.innerHTML = "";
-
-          data.models.forEach(function (m) {
-            const opt = document.createElement("option");
-            opt.value = m;
-            opt.textContent = m;
-            select.appendChild(opt);
-          });
-
-          if (data.models.includes(current)) {
-            select.value = current;
-          }
-
-          applyDefaultPartNumber();
+            const data = await response.json();
+            renderQuoteResult(data);
+            statusText.textContent = "Quote updated.";
         } catch (err) {
-          applyDefaultPartNumber();
-        }
-      }
-
-      function buildSegmentsTable(segments) {
-        if (!Array.isArray(segments) || segments.length === 0) {
-          return "";
-        }
-
-        let html = "";
-        html += "<strong>Part number breakdown</strong>";
-        html += "<table>";
-        html += "<thead><tr>";
-        html += "<th>#</th>";
-        html += "<th>Segment</th>";
-        html += "<th>Code</th>";
-        html += "<th>Description</th>";
-        html += "<th>Adder</th>";
-        html += "</tr></thead>";
-        html += "<tbody>";
-
-        segments.forEach(function (seg) {
-          html += "<tr>";
-          html += "<td>" + (seg.segment_index ?? "") + "</td>";
-          html += "<td>" + (seg.segment_name ?? "") + "</td>";
-          html += "<td>" + (seg.code ?? "") + "</td>";
-          html += "<td>" + (seg.description ?? "") + "</td>";
-          html += "<td>" + (seg.adder ?? 0) + "</td>";
-          html += "</tr>";
-        });
-
-        html += "</tbody></table>";
-        return html;
-      }
-
-      async function submitQuote(event) {
-        event.preventDefault();
-
-        const btn = document.getElementById("quote-button");
-        const errorBox = document.getElementById("error-box");
-        const resultBox = document.getElementById("result-box");
-        const segmentsBox = document.getElementById("segments-box");
-
-        errorBox.style.display = "none";
-        resultBox.style.display = "none";
-        segmentsBox.style.display = "none";
-        errorBox.textContent = "";
-        resultBox.textContent = "";
-        segmentsBox.innerHTML = "";
-
-        const model = document.getElementById("model").value.trim();
-        const partNumber = document.getElementById("part_number").value.trim();
-
-        if (!model || !partNumber) {
-          errorBox.textContent = "Model and part number are required.";
-          errorBox.style.display = "block";
-          return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "Quoting...";
-
-        try {
-          const res = await fetch("/quote", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: model,
-              part_number: partNumber,
-            }),
-          });
-
-          const data = await res.json();
-
-          if (!res.ok || data.ok === false) {
-            let msg = data.error || data.detail || "Unknown error";
-            if (data.segment) {
-              msg += "\nSegment: " + data.segment;
-            }
-            if (data.invalid_code) {
-              msg += "\nInvalid code: " + data.invalid_code;
-            }
-            if (Array.isArray(data.valid_codes) && data.valid_codes.length > 0) {
-              msg += "\nValid codes: " + data.valid_codes.join(", ");
-            }
-            errorBox.textContent = msg;
-            errorBox.style.display = "block";
-            return;
-          }
-
-          let text = "";
-          text += "Model: " + (data.model || "") + "\n";
-          text += "Input part number: " + (data.input_part_number || "") + "\n";
-          text += "Normalized part number: " + (data.normalized_part_number || "") + "\n";
-          text += "Base price: " + data.base_price + "\n";
-          text += "Adders total: " + data.adders_total + "\n";
-          text += "Final price: " + data.final_price + "\n";
-
-          resultBox.textContent = text;
-          resultBox.style.display = "block";
-
-          const segmentsHtml = buildSegmentsTable(data.segments || []);
-          if (segmentsHtml) {
-            segmentsBox.innerHTML = segmentsHtml;
-            segmentsBox.style.display = "block";
-          }
-        } catch (err) {
-          errorBox.textContent = "Request failed: " + err;
-          errorBox.style.display = "block";
+            console.error(err);
+            errorText.textContent = "Something went wrong talking to the server.";
+            statusText.textContent = "";
         } finally {
-          btn.disabled = false;
-          btn.textContent = "Get quote";
+            quoteButton.disabled = false;
         }
-      }
-
-      async function submitNaturalLanguageQuote(event) {
-        event.preventDefault();
-
-        const btn = document.getElementById("nl-button");
-        const errorBox = document.getElementById("nl-error-box");
-        const resultBox = document.getElementById("nl-result-box");
-        const segmentsBox = document.getElementById("nl-segments-box");
-
-        errorBox.style.display = "none";
-        resultBox.style.display = "none";
-        segmentsBox.style.display = "none";
-        errorBox.textContent = "";
-        resultBox.textContent = "";
-        segmentsBox.innerHTML = "";
-
-        const text = document.getElementById("nl_text").value.trim();
-
-        if (!text) {
-          errorBox.textContent = "Please enter a natural language request.";
-          errorBox.style.display = "block";
-          return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = "Quoting from text...";
-
-        try {
-          const res = await fetch("/nl_quote", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ text: text }),
-          });
-
-          const data = await res.json();
-
-          if (!res.ok || data.ok === false) {
-            let msg = data.error || data.detail || "Unknown error";
-            if (data.segment) {
-              msg += "\nSegment: " + data.segment;
-            }
-            if (data.invalid_code) {
-              msg += "\nInvalid code: " + data.invalid_code;
-            }
-            if (Array.isArray(data.valid_codes) && data.valid_codes.length > 0) {
-              msg += "\nValid codes: " + data.valid_codes.join(", ");
-            }
-            errorBox.textContent = msg;
-            errorBox.style.display = "block";
-            return;
-          }
-
-          let textOut = "";
-          textOut += "Source: " + (data.source || "natural_language") + "\n";
-          textOut += "Model: " + (data.model || "") + "\n";
-          textOut += "Input text: " + (data.input_text || "") + "\n";
-          textOut += "Generated part number: " + (data.generated_part_number || "") + "\n";
-          textOut += "Normalized part number: " + (data.normalized_part_number || "") + "\n";
-          textOut += "Base price: " + data.base_price + "\n";
-          textOut += "Adders total: " + data.adders_total + "\n";
-          textOut += "Final price: " + data.final_price + "\n";
-
-          resultBox.textContent = textOut;
-          resultBox.style.display = "block";
-
-          const segmentsHtml = buildSegmentsTable(data.segments || []);
-          if (segmentsHtml) {
-            segmentsBox.innerHTML = segmentsHtml;
-            segmentsBox.style.display = "block";
-          }
-        } catch (err) {
-          errorBox.textContent = "Request failed: " + err;
-          errorBox.style.display = "block";
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Get quote from text";
-        }
-      }
-
-      document.getElementById("quote-form").addEventListener("submit", submitQuote);
-      document.getElementById("model").addEventListener("change", applyDefaultPartNumber);
-
-      document.getElementById("nl-form").addEventListener("submit", submitNaturalLanguageQuote);
-
-      loadEngines();
-    </script>
-  </body>
+    });
+</script>
+</body>
 </html>
