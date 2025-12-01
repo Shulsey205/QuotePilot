@@ -7,7 +7,7 @@ BASE_PRICE = 1000.0
 
 
 # Master definition of all segments, options, and pricing for QPSAH200S.
-# This matches your combined spec + pricing PDF.
+# This matches your combined spec + pricing PDF, with updated span range options.
 MASTER_SEGMENTS: Dict[int, Dict[str, Any]] = {
     1: {
         "key": "output_signal_type",
@@ -35,22 +35,12 @@ MASTER_SEGMENTS: Dict[int, Dict[str, Any]] = {
         "name": "Span range",
         "options": {
             "M": {
-                "description": "4 to 400 inches of water column",
+                "description": "0 to 400 inches of water column",
                 "adder": 0.0,
                 "default": True,
             },
-            "L": {
-                "description": "2 to 40 inches of water column",
-                "adder": 100.0,
-                "default": False,
-            },
-            "D": {
-                "description": "2 to 20 inches of water column",
-                "adder": 150.0,
-                "default": False,
-            },
-            "F": {
-                "description": "20 to 2000 inches of water column",
+            "H": {
+                "description": "400 to 1000 inches of water column",
                 "adder": 200.0,
                 "default": False,
             },
