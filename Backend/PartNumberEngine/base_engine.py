@@ -56,6 +56,19 @@ class PartNumberEngine(ABC):
         """
         raise NotImplementedError
 
+    # ------------------------------------------------------------------
+    # Backwards-compatible helper used by API layer
+    # ------------------------------------------------------------------
+    def price_part_number(self, part_number: str) -> Dict[str, Any]:
+        """
+        Compatibility layer for older API code that expects a
+        price_part_number(...) method on the engine.
+
+        Simply delegates to quote(part_number) and returns the same
+        structured result.
+        """
+        return self.quote(part_number)
+
 
 # ----------------------------------------------------------------------
 # Engine registry helpers
