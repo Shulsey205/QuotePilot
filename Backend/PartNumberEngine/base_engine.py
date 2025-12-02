@@ -1,14 +1,19 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Type
+from typing import Any, Dict, Callable, Type
+
+
+# ---------------------------------------------------------------------------
+# Error type used by all engines
+# ---------------------------------------------------------------------------
 
 
 class PartNumberError(Exception):
     """
-    Structured error for invalid part numbers.
-    Carries:
-      - segment: which logical segment failed (e.g. "output_signal")
-      - invalid_code: the code the user provided (e.g. "Z")
-      - valid_codes: list of valid codes for that segment (e.g. ["A", "B", "C"])
+    Structured error raised when a part-number segment or code is invalid.
+
+    Attributes:
+        segment:      Human-readable segment name (e.g. "Output signal type")
+        invalid_code: The bad code that was supplied (e.g. "Z")
+        valid_codes:  List of valid codes for this segment (e.g. ["A", "B", "C"])
     """
 
     def __init__(
@@ -24,93 +29,49 @@ class PartNumberError(Exception):
         self.valid_codes = valid_codes or []
 
 
-class PartNumberEngine(ABC):
+# ---------------------------------------------------------------------------
+# Base engine + registry
+# ---------------------------------------------------------------------------
+
+
+class PartNumberEngine:
     """
-    Base class for all QuotePilot product engines.
-
-    Each specific instrument (QPSAH200S, QPMAG, etc.)
-    will subclass this and implement quote().
+    Minimal base class for all QuotePilot engines.
+    Engines must implement quote(part_number) -> dict.
     """
 
-    # Example: "QPSAH200S" or "QPMAG"
-    model: str
+    model: str = ""
 
-    @abstractmethod
-    def quote(self, part_number: str) -> Dict[str, Any]:
-        """
-        Return a full quote result for a part number.
-
-        Expected general result pattern (you can add more fields if needed):
-
-        {
-          "model": str,
-          "input_part_number": str,
-          "normalized_part_number": str,
-          "segments": {...},          # or a list, depending on engine
-          "base_price": float,
-          "adders_total": float,
-          "final_price": float,
-        }
-
-        Implementations may raise PartNumberError when validation fails.
-        """
-        raise NotImplementedError
-
-    # ------------------------------------------------------------------
-    # Backwards-compatible helper used by API layer
-    # ------------------------------------------------------------------
-    def price_part_number(self, part_number: str) -> Dict[str, Any]:
-        """
-        Compatibility layer for older API code that expects a
-        price_part_number(...) method on the engine.
-
-        Simply delegates to quote(part_number) and returns the same
-        structured result.
-        """
-        return self.quote(part_number)
+    def quote(self, part_number: str) -> Dict[str, Any]:  # type: ignore[override]
+        raise NotImplementedError("Engines must implement quote(part_number)")
 
 
-# ----------------------------------------------------------------------
-# Engine registry helpers
-# ----------------------------------------------------------------------
-
-# Holds a mapping of model name -> engine class
-# Example: "QPSAH200S" -> QPSAH200SEngine
-ENGINE_REGISTRY: Dict[str, Type[PartNumberEngine]] = {}
+ENGINE_REGISTRY: Dict[str, PartNumberEngine] = {}
 
 
-def register_engine(engine_cls: Type[PartNumberEngine]) -> Type[PartNumberEngine]:
+def register_engine(model: str) -> Callable[[Type[PartNumberEngine]], Type[PartNumberEngine]]:
     """
-    Class decorator to register a concrete engine in ENGINE_REGISTRY.
+    Class decorator used by engine implementations to register themselves.
 
-    Usage:
-
-      @register_engine
-      class QPSAH200SEngine(PartNumberEngine):
-          model = "QPSAH200S"
-          ...
-
-    When Python imports the module containing that class, the decorator runs
-    and adds the class to ENGINE_REGISTRY under its .model name.
+    Example:
+        @register_engine("QPSAH200S")
+        class QPSAH200SEngine(PartNumberEngine):
+            ...
     """
-    model = getattr(engine_cls, "model", None)
-    if not model:
-        raise ValueError("Engine classes must define a class attribute 'model'.")
 
-    ENGINE_REGISTRY[model] = engine_cls
-    return engine_cls
+    def decorator(cls: Type[PartNumberEngine]) -> Type[PartNumberEngine]:
+        ENGINE_REGISTRY[model] = cls()
+        return cls
+
+    return decorator
 
 
 def get_engine(model: str) -> PartNumberEngine:
     """
-    Look up an engine by model name and return an instance.
-
-    Example:
-      engine = get_engine("QPSAH200S")
-      result = engine.quote("QPSAH200S-A-M-G-3-C-3-1-1-C-1-02")
+    Look up an engine instance by model code (e.g. "QPSAH200S", "QPMAG").
     """
-    try:
-        engine_cls = ENGINE_REGISTRY[model]
-    except KeyError:
-        raise ValueError(f"Unknown model: {model!r}")
-    return engine_cls()
+    if model not in ENGINE_REGISTRY:
+        raise KeyError(
+            f"Unknown model '{model}'. Available: {sorted(list(ENGINE_REGISTRY.keys()))}"
+        )
+    return ENGINE_REGISTRY[model]

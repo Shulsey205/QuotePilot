@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from .base_engine import PartNumberEngine, PartNumberError, register_engine
 
@@ -253,115 +253,94 @@ MASTER_SEGMENTS: Dict[int, Dict[str, Any]] = {
 }
 
 
-# Derived list structure used by the engine logic below
-SEGMENTS: List[Dict[str, Any]] = [
-    {
-        "index": index,
-        "name": seg["name"],
-        "codes": {
-            code: {
-                "description": opt["description"],
-                "adder": float(opt["adder"]),
-            }
-            for code, opt in seg["options"].items()
-        },
-    }
-    for index, seg in sorted(MASTER_SEGMENTS.items())
-]
-
-
-@register_engine
+@register_engine("QPSAH200S")
 class QPSAH200SEngine(PartNumberEngine):
     """
-    Engine for QPSAH200S differential pressure transmitter.
+    Engine for QPSAH200S using MASTER_SEGMENTS.
 
-    Responsibilities:
-      - Parse the part number into segments
-      - Validate each segment code
-      - Calculate pricing (base price + adders)
-      - Return a structured result for the API/UI
+    Public interface:
+        quote(part_number: str) -> Dict[str, Any]
     """
 
     model = "QPSAH200S"
 
-    def quote(self, part_number: str) -> Dict[str, Any]:
-        if not part_number or not isinstance(part_number, str):
+    def __init__(self) -> None:
+        self.base_price = BASE_PRICE
+        self.master_segments = MASTER_SEGMENTS
+
+    def _parse(self, part_number: str) -> Dict[str, Any]:
+        if not part_number:
             raise PartNumberError(
-                "Part number must be a non-empty string",
-                segment="Part number",
-                invalid_code=str(part_number),
+                "Part number is required.",
+                segment="model",
+                invalid_code=None,
+                valid_codes=[self.model],
             )
 
-        # Keep the raw input
-        input_part_number = part_number.strip()
+        raw = part_number.strip().upper()
+        pieces = raw.split("-")
 
-        # Split on hyphens
-        parts = input_part_number.split("-")
-
-        # Expect: model + 11 segments
-        if len(parts) != 12:
+        # Expect model + 11 segments
+        if len(pieces) != 12:
             raise PartNumberError(
-                f"Expected 11 segments after the model, got {len(parts) - 1}",
-                segment="Part number structure",
-                invalid_code=input_part_number,
+                f"Expected 12 segments including model, got {len(pieces)}.",
+                segment="model",
+                invalid_code=raw,
+                valid_codes=[self.model],
             )
 
-        model_code = parts[0]
-        segment_codes = parts[1:]
-
+        model_code = pieces[0]
         if model_code != self.model:
             raise PartNumberError(
-                f"Invalid model [{model_code}]. Expected [{self.model}]",
-                segment="Model",
+                f"Invalid model [{model_code}].",
+                segment="model",
                 invalid_code=model_code,
                 valid_codes=[self.model],
             )
 
-        segment_breakdown: List[Dict[str, Any]] = []
-        adders_total = 0.0
+        segment_codes = pieces[1:]
 
-        # Validate each segment against SEGMENTS definition
-        for seg_def, code in zip(SEGMENTS, segment_codes):
+        segments_output: Dict[str, Any] = {}
+        total_adders = 0.0
+
+        for index, code in enumerate(segment_codes, start=1):
+            seg_def = self.master_segments[index]
+            seg_key = seg_def["key"]
             seg_name = seg_def["name"]
-            codes_map = seg_def["codes"]
+            options = seg_def["options"]
 
-            # Segment 11 uses codes like "02" which we keep as-is
-            if code not in codes_map:
-                valid_codes = list(codes_map.keys())
+            if code not in options:
                 raise PartNumberError(
                     f"Invalid code [{code}] for segment [{seg_name}]. "
-                    f"Valid options are: {', '.join(valid_codes)}",
+                    f"Valid options are: {', '.join(options.keys())}",
                     segment=seg_name,
                     invalid_code=code,
-                    valid_codes=valid_codes,
+                    valid_codes=list(options.keys()),
                 )
 
-            info = codes_map[code]
-            description = info["description"]
-            adder = float(info["adder"])
+            opt = options[code]
+            adder = float(opt.get("adder", 0.0))
+            total_adders += adder
 
-            segment_breakdown.append(
-                {
-                    "segment_index": seg_def["index"],
-                    "segment_name": seg_name,
-                    "code": code,
-                    "description": description,
-                    "adder": adder,
-                }
-            )
-            adders_total += adder
+            segments_output[seg_key] = {
+                "code": code,
+                "description": opt.get("description", ""),
+                "adder": adder,
+                "default": bool(opt.get("default", False)),
+            }
 
-        final_price = BASE_PRICE + adders_total
-
-        # Normalized part number: reassembled from parsed pieces
-        normalized_part_number = "-".join([self.model] + segment_codes)
+        final_price = self.base_price + total_adders
 
         return {
             "model": self.model,
-            "input_part_number": input_part_number,
-            "normalized_part_number": normalized_part_number,
-            "segments": segment_breakdown,
-            "base_price": BASE_PRICE,
-            "adders_total": adders_total,
+            "part_number": part_number,
+            "base_price": self.base_price,
+            "total_adders": total_adders,
             "final_price": final_price,
+            "segments": segments_output,
         }
+
+    def quote(self, part_number: str) -> Dict[str, Any]:
+        result = self._parse(part_number)
+        result["success"] = True
+        return result
