@@ -95,7 +95,7 @@ Response includes:
 * Base price and adders  
 * Final price  
 * Structured validation errors if any segment code is invalid  
-
+S
 ---
 
 ## Web UI (quote_ui.html)
