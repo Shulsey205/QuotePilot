@@ -1,23 +1,18 @@
-# PartNumberEngine/__init__.py
+# Backend/PartNumberEngine/__init__.py
 
-from .base_engine import (
-    PartNumberEngine,
-    PartNumberError,
-    register_engine,
-    get_engine,
-    ENGINE_REGISTRY,
-)
+"""
+Package init for PartNumberEngine.
 
-# Import concrete engines so their @register_engine decorators run
-from .dp_qpsah200s import QPSAH200SEngine
-from .qpmag_engine import QPMAGEngine
+This file's job is to import all concrete engine modules so that their
+@register_engine decorators run at import time and populate ENGINE_REGISTRY
+in base_engine.py.
 
-__all__ = [
-    "PartNumberEngine",
-    "PartNumberError",
-    "register_engine",
-    "get_engine",
-    "ENGINE_REGISTRY",
-    "QPSAH200SEngine",
-    "QPMAGEngine",
-]
+Any new engine module should be imported here.
+"""
+
+# Import engine modules solely for their side effects (registration).
+# Each module defines an engine class decorated with @register_engine(...).
+
+from . import dp_qpsah200s  # noqa: F401
+from . import nl_qpsah200s  # noqa: F401
+from . import qpmag_engine  # noqa: F401

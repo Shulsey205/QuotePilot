@@ -5,503 +5,367 @@
     <title>QuotePilot Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        body {
+        :root {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #111827;
+            background: #f3f4f6;
+        }
+
+        body {
             margin: 0;
             padding: 0;
-            background: #f4f4f6;
-            color: #222;
+            background: #f3f4f6;
         }
 
         .page {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px 16px 40px;
+            max-width: 960px;
+            margin: 32px auto;
+            padding: 24px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
         }
 
         h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
+            margin-top: 0;
+            font-size: 1.8rem;
+            letter-spacing: 0.02em;
         }
 
-        h2 {
-            font-size: 18px;
-            margin-top: 24px;
-            margin-bottom: 8px;
+        .subheading {
+            margin-bottom: 24px;
+            color: #4b5563;
         }
 
-        .subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 20px;
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.7fr);
+            gap: 24px;
+            align-items: start;
         }
 
         .card {
-            background: #fff;
+            background: #f9fafb;
             border-radius: 10px;
-            padding: 16px 18px 18px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-            margin-bottom: 20px;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .field {
-            flex: 1 1 220px;
-            min-width: 200px;
+            padding: 16px 18px;
+            border: 1px solid #e5e7eb;
         }
 
         label {
             display: block;
-            font-size: 13px;
+            font-size: 0.9rem;
             margin-bottom: 4px;
-            color: #444;
+            color: #374151;
         }
 
         select,
         input[type="text"],
         textarea {
             width: 100%;
-            box-sizing: border-box;
             padding: 8px 10px;
-            font-size: 14px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            outline: none;
-            background: #fff;
-        }
-
-        select:focus,
-        input[type="text"]:focus,
-        textarea:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            background: #ffffff;
         }
 
         textarea {
-            min-height: 80px;
+            min-height: 110px;
             resize: vertical;
-            font-family: inherit;
         }
 
         .hint {
-            font-size: 12px;
-            color: #777;
+            font-size: 0.8rem;
+            color: #6b7280;
             margin-top: 2px;
         }
 
-        .button-row {
+        .row {
+            margin-bottom: 12px;
+        }
+
+        .actions {
+            margin-top: 12px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px;
         }
 
         button {
-            padding: 9px 18px;
-            font-size: 14px;
             border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
             border: none;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
             background: #2563eb;
-            color: #fff;
-            font-weight: 500;
+            color: #ffffff;
         }
 
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: default;
-        }
-
-        .pill {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 999px;
+        .btn-secondary {
             background: #e5e7eb;
-            color: #374151;
-            display: inline-block;
+            color: #111827;
         }
 
-        .pill.nl {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .pill.error {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .result-header {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .result-main {
-            font-size: 15px;
-        }
-
-        .result-meta {
-            font-size: 13px;
-            color: #555;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
+        .summary {
             margin-top: 8px;
+            padding: 10px 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            font-size: 0.9rem;
         }
 
-        th,
-        td {
-            padding: 6px 8px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
+        .summary-item {
+            margin-bottom: 4px;
         }
 
-        th {
-            background: #f9fafb;
-            font-weight: 500;
+        .summary-label {
+            font-weight: 600;
         }
 
         pre {
-            font-size: 12px;
-            background: #0b1020;
+            margin: 0;
+            padding: 12px;
+            background: #111827;
             color: #e5e7eb;
-            padding: 10px 12px;
             border-radius: 8px;
+            font-size: 0.8rem;
             overflow-x: auto;
-            line-height: 1.4;
         }
 
-        .error-text {
-            font-size: 13px;
-            color: #b91c1c;
-            margin-top: 6px;
+        .results-card {
+            margin-top: 16px;
         }
 
-        .small {
-            font-size: 11px;
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .badge-nl {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .nl-note {
+            font-size: 0.8rem;
             color: #6b7280;
-            margin-top: 12px;
+            margin-top: 4px;
         }
 
-        @media (max-width: 640px) {
-            .page {
-                padding: 16px 10px 24px;
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: minmax(0, 1fr);
             }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <h1>QuotePilot Demo</h1>
-        <div class="subtitle">
-            Generate a quote using either a full part number or a natural-language description.
-        </div>
+<div class="page">
+    <h1>QuotePilot demo</h1>
+    <p class="subheading">
+        Choose a model, enter a part number or a plain-English description, and QuotePilot will return
+        the full breakdown and price.
+    </p>
 
+    <div class="form-grid">
+        <!-- Left: inputs -->
         <div class="card">
-            <h2>1. Configure request</h2>
-
-            <div class="form-row">
-                <div class="field">
-                    <label for="model">Model</label>
-                    <select id="model">
-                        <option value="QPSAH200S">QPSAH200S (DP Transmitter)</option>
-                    </select>
-                    <div class="hint">
-                        Natural-language is currently supported for QPSAH200S.
-                    </div>
+            <div class="row">
+                <label for="model">Model</label>
+                <select id="model">
+                    <option value="QPSAH200S">QPSAH200S – DP transmitter</option>
+                    <option value="QPMAG">QPMAG – Magnetic flowmeter</option>
+                </select>
+                <div class="hint">
+                    QPSAH200S supports both part numbers and natural-language descriptions.
+                    QPMAG currently supports part numbers only.
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="field">
-                    <label for="partNumber">Part number (optional)</label>
-                    <input
-                        type="text"
-                        id="partNumber"
-                        placeholder="QPSAH200S-A-M-G-3-C-3-1-1-C-1-02"
-                    />
-                    <div class="hint">
-                        If this is filled, it will be used. Leave empty and fill description for natural-language.
-                    </div>
+            <div class="row">
+                <label for="partNumber">Part number</label>
+                <input id="partNumber" type="text" />
+                <div class="hint">
+                    Leave blank if you want to use natural-language description for QPSAH200S.
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="field">
-                    <label for="description">
-                        Description (optional)
-                        <span class="pill nl">Natural-language</span>
-                    </label>
-                    <textarea
-                        id="description"
-                        placeholder="Example: DP transmitter, 0–150 inches of water, class I div 2, stainless housing, with display"
-                    ></textarea>
-                    <div class="hint">
-                        For QPSAH200S, you can describe the application here and leave part number blank.
-                    </div>
+            <div class="row">
+                <label for="description">
+                    Description (plain English)
+                </label>
+                <textarea id="description"
+                          placeholder="Example: DP transmitter, 0–150 inches, stainless wetted parts, explosion-proof, no display"></textarea>
+                <div class="hint">
+                    Natural-language interpretation is available for QPSAH200S only. For QPMAG, use a part number.
                 </div>
             </div>
 
-            <div class="button-row">
-                <button id="quoteButton">Get quote</button>
-                <span id="status" class="result-meta"></span>
+            <div class="actions">
+                <button id="btnQuote" class="btn-primary">
+                    Run quote
+                </button>
+                <button id="btnBaseline" class="btn-secondary" type="button">
+                    Use baseline part number
+                </button>
             </div>
         </div>
 
-        <div class="card">
-            <h2>2. Result</h2>
+        <!-- Right: summary + raw JSON -->
+        <div class="card results-card">
+            <div class="row">
+                <span class="badge" id="badgeModel">Model: QPSAH200S</span>
+            </div>
+            <div class="summary" id="summary">
+                <div class="summary-item">
+                    <span class="summary-label">Part number:</span>
+                    <span id="summaryPart">–</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Base price:</span>
+                    <span id="summaryBase">–</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total adders:</span>
+                    <span id="summaryAdders">–</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Final price:</span>
+                    <span id="summaryFinal">–</span>
+                </div>
+                <div class="summary-item" id="nlBadgeRow" style="display:none;">
+                    <span class="badge badge-nl">Natural-language interpretation</span>
+                </div>
+                <div class="nl-note" id="nlNote" style="display:none;">
+                    The part number above was built from your description. See the segments
+                    and NL details in the JSON response below.
+                </div>
+            </div>
 
-            <div id="resultSummary"></div>
-            <div id="segmentTableContainer"></div>
-
-            <h3 style="font-size: 14px; margin-top: 16px; margin-bottom: 6px;">
-                Raw response
-            </h3>
-            <pre id="rawResponse">(no response yet)</pre>
-
-            <div class="small">
-                This page is for internal demo and testing. The public QuotePilot
-                UI can be styled separately later.
+            <div class="row" style="margin-top: 12px;">
+                <label>Raw response</label>
+                <pre id="rawResponse">{}</pre>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const quoteButton = document.getElementById("quoteButton");
-        const partNumberInput = document.getElementById("partNumber");
-        const descriptionInput = document.getElementById("description");
-        const modelSelect = document.getElementById("model");
-        const statusEl = document.getElementById("status");
-        const resultSummaryEl = document.getElementById("resultSummary");
-        const rawResponseEl = document.getElementById("rawResponse");
-        const segmentTableContainer = document.getElementById("segmentTableContainer");
+<script>
+    const BASELINES = {
+        "QPSAH200S": "QPSAH200S-A-M-G-3-C-3-1-1-C-1-02",
+        "QPMAG": "QPMAG-04-PT-SS-F1-C-1-1-C-00"
+    };
 
-        async function sendQuoteRequest() {
-            const model = modelSelect.value.trim();
-            const partNumber = partNumberInput.value.trim();
-            const description = descriptionInput.value.trim();
+    const modelSelect = document.getElementById("model");
+    const partInput = document.getElementById("partNumber");
+    const descInput = document.getElementById("description");
+    const btnQuote = document.getElementById("btnQuote");
+    const btnBaseline = document.getElementById("btnBaseline");
 
-            statusEl.textContent = "";
-            resultSummaryEl.innerHTML = "";
-            segmentTableContainer.innerHTML = "";
+    const badgeModel = document.getElementById("badgeModel");
+    const summaryPart = document.getElementById("summaryPart");
+    const summaryBase = document.getElementById("summaryBase");
+    const summaryAdders = document.getElementById("summaryAdders");
+    const summaryFinal = document.getElementById("summaryFinal");
+    const rawResponse = document.getElementById("rawResponse");
+    const nlBadgeRow = document.getElementById("nlBadgeRow");
+    const nlNote = document.getElementById("nlNote");
 
-            if (!model) {
-                statusEl.textContent = "Model is required.";
-                return;
-            }
+    function setBaselineForCurrentModel() {
+        const model = modelSelect.value;
+        const baseline = BASELINES[model] || "";
+        partInput.value = baseline;
+    }
 
-            if (!partNumber && !description) {
-                statusEl.textContent = "Provide either a part number or a description.";
-                return;
-            }
+    modelSelect.addEventListener("change", () => {
+        const model = modelSelect.value;
+        badgeModel.textContent = "Model: " + model;
+        setBaselineForCurrentModel();
 
-            const payload = {
-                model: model
-            };
+        // Clear NL badge/note when switching models
+        nlBadgeRow.style.display = "none";
+        nlNote.style.display = "none";
+    });
 
-            // If part number is supplied, we always use it.
-            // If not, we fall back to description (natural-language).
-            if (partNumber) {
-                payload.part_number = partNumber;
-            } else {
+    btnBaseline.addEventListener("click", (event) => {
+        event.preventDefault();
+        setBaselineForCurrentModel();
+    });
+
+    btnQuote.addEventListener("click", async (event) => {
+        event.preventDefault();
+
+        const model = modelSelect.value;
+        const partNumber = partInput.value.trim();
+        const description = descInput.value.trim();
+
+        const payload = { model: model };
+
+        if (description && !partNumber) {
+            payload.description = description;
+        } else {
+            payload.part_number = partNumber;
+            if (description) {
                 payload.description = description;
-            }
-
-            quoteButton.disabled = true;
-            statusEl.textContent = "Requesting quote...";
-
-            try {
-                const response = await fetch("/quote", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                rawResponseEl.textContent = JSON.stringify(data, null, 2);
-
-                if (!response.ok || data.success === false) {
-                    statusEl.innerHTML = "";
-                    const errors = (data && data.errors) || [];
-                    let msg = "Quote failed.";
-                    if (errors.length > 0) {
-                        msg += " See errors below.";
-                    }
-                    const errorHtml = `
-                        <div class="error-text">
-                            <span class="pill error">Error</span>
-                            <span>${msg}</span>
-                        </div>
-                    `;
-                    resultSummaryEl.innerHTML = errorHtml;
-
-                    if (errors.length > 0) {
-                        const listItems = errors
-                            .map((e) => {
-                                const seg = e.segment ? ` [${e.segment}]` : "";
-                                return `<li>${e.message || "Unknown error"}${seg}</li>`;
-                            })
-                            .join("");
-                        segmentTableContainer.innerHTML = `<ul class="error-text">${listItems}</ul>`;
-                    }
-
-                    return;
-                }
-
-                // Success
-                statusEl.textContent = "Quote successful.";
-
-                const finalModel = data.model || model;
-                const finalPart = data.part_number || partNumber || "(unknown)";
-
-                const price = data.final_price || data.total_price || data.price;
-                const basePrice = data.base_price;
-                const adderTotal = data.total_adders || data.adders_total;
-
-                const nlInfo = data.natural_language || null;
-                const usedNL =
-                    !!nlInfo ||
-                    (!!data.nl_segments && !payload.part_number && payload.model === "QPSAH200S");
-
-                // Summary block
-                let summaryHtml = `
-                    <div class="result-header">
-                        <div class="result-main">
-                            <strong>${finalModel}</strong>
-                            <span class="result-meta">Part number</span>
-                            <div>${finalPart}</div>
-                        </div>
-                `;
-
-                if (price !== undefined) {
-                    summaryHtml += `
-                        <div class="result-main">
-                            <span class="result-meta">Price</span>
-                            <div>$${price}</div>
-                        </div>
-                    `;
-                }
-
-                if (usedNL) {
-                    summaryHtml += `
-                        <div>
-                            <span class="pill nl">Natural-language</span>
-                        </div>
-                    `;
-                }
-
-                summaryHtml += `</div>`;
-
-                if (basePrice !== undefined || adderTotal !== undefined) {
-                    summaryHtml += `
-                        <div class="result-meta">
-                            ${basePrice !== undefined ? `Base: $${basePrice}` : ""}
-                            ${
-                                adderTotal !== undefined
-                                    ? ` &nbsp;&middot;&nbsp; Adders: $${adderTotal}`
-                                    : ""
-                            }
-                        </div>
-                    `;
-                }
-
-                resultSummaryEl.innerHTML = summaryHtml;
-
-                // Segment table
-                let segments = null;
-
-                // Prefer engine-provided segment breakdown if present
-                if (data.segments && typeof data.segments === "object") {
-                    segments = data.segments;
-                } else if (data.nl_segments && typeof data.nl_segments === "object") {
-                    segments = data.nl_segments;
-                } else if (
-                    nlInfo &&
-                    nlInfo.interpreter &&
-                    typeof nlInfo.interpreter.segments === "object"
-                ) {
-                    segments = nlInfo.interpreter.segments;
-                }
-
-                if (segments) {
-                    const rows = Object.entries(segments)
-                        .map(([name, info]) => {
-                            const code = info.code || info.selected_code || "";
-                            const reason = info.reason || "";
-                            const source = info.source || "";
-                            return `
-                                <tr>
-                                    <td>${name}</td>
-                                    <td>${code}</td>
-                                    <td>${source}</td>
-                                    <td>${reason}</td>
-                                </tr>
-                            `;
-                        })
-                        .join("");
-
-                    const tableHtml = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Segment</th>
-                                    <th>Code</th>
-                                    <th>Source</th>
-                                    <th>Reason</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rows}
-                            </tbody>
-                        </table>
-                    `;
-
-                    segmentTableContainer.innerHTML = tableHtml;
-                } else {
-                    segmentTableContainer.innerHTML = `
-                        <div class="result-meta">
-                            No segment breakdown returned from engine.
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                console.error("Quote error:", err);
-                statusEl.textContent = "Request failed. See console.";
-                rawResponseEl.textContent = String(err);
-            } finally {
-                quoteButton.disabled = false;
             }
         }
 
-        quoteButton.addEventListener("click", () => {
-            sendQuoteRequest();
-        });
+        rawResponse.textContent = "Loading...";
+        nlBadgeRow.style.display = "none";
+        nlNote.style.display = "none";
 
-        // Allow Enter to submit when focused on part number input
-        partNumberInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendQuoteRequest();
+        try {
+            const resp = await fetch("/quote", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await resp.json();
+
+            rawResponse.textContent = JSON.stringify(data, null, 2);
+
+            if (!resp.ok || data.success === false) {
+                summaryPart.textContent = "Error";
+                summaryBase.textContent = "–";
+                summaryAdders.textContent = "–";
+                summaryFinal.textContent = "–";
+                return;
             }
-        });
-    </script>
+
+            summaryPart.textContent = data.part_number || "–";
+            summaryBase.textContent = data.base_price != null ? String(data.base_price) : "–";
+            summaryAdders.textContent = data.total_adders != null ? String(data.total_adders) : "–";
+            summaryFinal.textContent = data.final_price != null ? String(data.final_price) : "–";
+
+            if (data.natural_language) {
+                nlBadgeRow.style.display = "block";
+                nlNote.style.display = "block";
+            }
+
+        } catch (err) {
+            rawResponse.textContent = "Error calling /quote: " + err;
+            summaryPart.textContent = "Error";
+            summaryBase.textContent = "–";
+            summaryAdders.textContent = "–";
+            summaryFinal.textContent = "–";
+        }
+    });
+
+    // Initialize UI with default baseline
+    setBaselineForCurrentModel();
+</script>
 </body>
 </html>

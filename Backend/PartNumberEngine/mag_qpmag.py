@@ -1,157 +1,235 @@
-from typing import Any, Dict, List
+# Backend/PartNumberEngine/qpmag_engine.py
 
-from .base_engine import PartNumberEngine
+from typing import Dict, Any, List
 
-
-BASE_PRICE = 900.0
-
-# Segment dictionaries for QPMAG mag meter
-
-SIZE_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "1": {"description": "one inch", "adder": 0.0},
-    "2": {"description": "two inch", "adder": 150.0},
-    "4": {"description": "four inch", "adder": 300.0},  # default
-}
-
-LINER_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "R": {"description": "hard rubber liner", "adder": 0.0},   # default
-    "T": {"description": "PTFE liner", "adder": 120.0},
-    "P": {"description": "polypropylene liner", "adder": 80.0},
-}
-
-ELECTRODE_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "S": {"description": "three sixteen stainless steel electrodes", "adder": 0.0},  # default
-    "H": {"description": "Hastelloy C electrodes", "adder": 180.0},
-    "T": {"description": "titanium electrodes", "adder": 140.0},
-}
-
-BODY_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "W": {"description": "wafer style body", "adder": 0.0},
-    "F": {"description": "flanged ANSI Class one fifty body", "adder": 200.0},  # default
-    "S": {"description": "sanitary tri clamp body", "adder": 300.0},
-}
-
-DISPLAY_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "I": {"description": "integral local display", "adder": 0.0},  # default
-    "R": {"description": "remote display with ten foot cable", "adder": 75.0},
-    "N": {"description": "no display", "adder": -50.0},
-}
-
-OUTPUT_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "A": {"description": "four to twenty milliamp with pulse output", "adder": 0.0},  # default
-    "P": {"description": "pulse output only", "adder": -40.0},
-    "D": {"description": "digital Modbus or RS four eighty five output", "adder": 60.0},
-}
-
-POWER_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "V": {"description": "twenty four volt DC supply", "adder": 0.0},  # default
-    "H": {"description": "one hundred twenty volt AC supply", "adder": 30.0},
-    "U": {"description": "universal AC or DC supply", "adder": 75.0},
-}
-
-OPTIONS_OPTIONS: Dict[str, Dict[str, Any]] = {
-    "00": {"description": "no options", "adder": 0.0},  # default
-    "GR": {"description": "grounding rings included", "adder": 85.0},
-    "CR": {"description": "thirty foot sensor cable", "adder": 60.0},
-}
-
-# Baseline default configuration for QPMAG
-BASELINE_PART_NUMBER = "QPMAG-4-R-S-F-I-A-V-00"
+from .base_engine import PartNumberEngine, PartNumberError, register_engine
 
 
+@register_engine("QPMAG")
 class QPMAGEngine(PartNumberEngine):
-    model = "QPMAG"
+    """
+    Quote engine for the QPMAG magnetic flowmeter.
+
+    Part number structure (segments are separated by "-"):
+
+        QPMAG - [1] - [2] - [3] - [4] - [5] - [6] - [7] - [8] - [9]
+
+    1) Line size
+    2) Liner material
+    3) Electrode material
+    4) Process connection
+    5) Housing material
+    6) Output signal
+    7) Power supply
+    8) Area classification
+    9) Options
+
+    Example baseline configuration:
+
+        QPMAG-04-PT-SS-F1-C-1-1-C-00
+    """
+
+    MODEL: str = "QPMAG"
+
+    # Baseline hardware price before adders
+    BASE_PRICE: float = 1800.0
+
+    # Baseline default part number (used by UI or callers as a starting point)
+    BASELINE_PART_NUMBER: str = "QPMAG-04-PT-SS-F1-C-1-1-C-00"
+
+    # Segment definitions.
+    # This mirrors the style used for QPSAH200S: a list of segment dicts in order.
+    MASTER_SEGMENTS: List[Dict[str, Any]] = [
+        {
+            "key": "line_size",
+            "label": "Line size",
+            "position": 1,
+            "codes": {
+                "04": {
+                    "description": '1" (DN25)',
+                    "adder": 0.0,
+                },
+                "06": {
+                    "description": '1.5" (DN40)',
+                    "adder": 50.0,
+                },
+                "08": {
+                    "description": '2" (DN50)',
+                    "adder": 100.0,
+                },
+                "10": {
+                    "description": '3" (DN80)',
+                    "adder": 150.0,
+                },
+                "12": {
+                    "description": '4" (DN100)',
+                    "adder": 250.0,
+                },
+            },
+        },
+        {
+            "key": "liner_material",
+            "label": "Liner material",
+            "position": 2,
+            "codes": {
+                "PT": {
+                    "description": "PTFE liner",
+                    "adder": 0.0,
+                },
+                "HR": {
+                    "description": "Hard rubber liner",
+                    "adder": -50.0,
+                },
+                "PU": {
+                    "description": "Polyurethane liner",
+                    "adder": -25.0,
+                },
+                "PP": {
+                    "description": "Polypropylene liner",
+                    "adder": -25.0,
+                },
+            },
+        },
+        {
+            "key": "electrode_material",
+            "label": "Electrode material",
+            "position": 3,
+            "codes": {
+                "SS": {
+                    "description": "316 stainless steel electrodes",
+                    "adder": 0.0,
+                },
+                "HC": {
+                    "description": "Hastelloy C electrodes",
+                    "adder": 150.0,
+                },
+                "TI": {
+                    "description": "Titanium electrodes",
+                    "adder": 200.0,
+                },
+            },
+        },
+        {
+            "key": "process_connection",
+            "label": "Process connection",
+            "position": 4,
+            "codes": {
+                "F1": {
+                    "description": "Wafer style, 150 class",
+                    "adder": 0.0,
+                },
+                "F2": {
+                    "description": "Flanged, 150 class",
+                    "adder": 150.0,
+                },
+                "F3": {
+                    "description": "Flanged, 300 class",
+                    "adder": 250.0,
+                },
+            },
+        },
+        {
+            "key": "housing_material",
+            "label": "Transmitter housing material",
+            "position": 5,
+            "codes": {
+                "C": {
+                    "description": "Coated aluminum housing",
+                    "adder": 0.0,
+                },
+                "S": {
+                    "description": "Stainless steel housing",
+                    "adder": 200.0,
+                },
+            },
+        },
+        {
+            "key": "output_signal",
+            "label": "Output signal",
+            "position": 6,
+            "codes": {
+                "1": {
+                    "description": "4–20 mA with HART",
+                    "adder": 0.0,
+                },
+                "2": {
+                    "description": "4–20 mA with HART + pulse output",
+                    "adder": 75.0,
+                },
+                "3": {
+                    "description": "Digital (Modbus/fieldbus style) output",
+                    "adder": 100.0,
+                },
+            },
+        },
+        {
+            "key": "power_supply",
+            "label": "Power supply",
+            "position": 7,
+            "codes": {
+                "1": {
+                    "description": "24 VDC power",
+                    "adder": 0.0,
+                },
+                "2": {
+                    "description": "Universal AC power (85–264 VAC)",
+                    "adder": 75.0,
+                },
+            },
+        },
+        {
+            "key": "area_classification",
+            "label": "Area classification / approvals",
+            "position": 8,
+            "codes": {
+                "C": {
+                    "description": "General purpose (non-hazardous)",
+                    "adder": 0.0,
+                },
+                "D": {
+                    "description": "Division 2 / Zone 2 approvals",
+                    "adder": 125.0,
+                },
+                "E": {
+                    "description": "Explosion-proof / flameproof approvals",
+                    "adder": 250.0,
+                },
+            },
+        },
+        {
+            "key": "options",
+            "label": "Options",
+            "position": 9,
+            "codes": {
+                "00": {
+                    "description": "No extra options",
+                    "adder": 0.0,
+                },
+                "01": {
+                    "description": "Grounding rings",
+                    "adder": 80.0,
+                },
+                "02": {
+                    "description": "Grounding electrodes",
+                    "adder": 100.0,
+                },
+                "03": {
+                    "description": "Grounding rings + grounding electrodes",
+                    "adder": 150.0,
+                },
+            },
+        },
+    ]
 
     def quote(self, part_number: str) -> Dict[str, Any]:
         """
-        Price and describe a QPMAG mag meter part number.
+        Public entry point for quoting a QPMAG part number.
 
-        Expected pattern:
-          QPMAG-size-liner-electrode-body-display-output-power-options
+        This delegates to the generic PartNumberEngine logic, which:
+        - Parses and validates the part number against MASTER_SEGMENTS
+        - Calculates all adders
+        - Returns a structured dict with breakdown and final price
 
-        Example:
-          QPMAG-4-R-S-F-I-A-V-00
+        Raises PartNumberError if any segment code is invalid.
         """
-
-        normalized = (part_number or "").strip().upper()
-
-        if not normalized or normalized == "QPMAG":
-            normalized = BASELINE_PART_NUMBER
-
-        parts = normalized.split("-")
-
-        # If the user omitted the model prefix but supplied segments, assume QPMAG
-        if parts[0] != "QPMAG":
-            parts = ["QPMAG"] + parts
-
-        # Pad with defaults if segments are missing
-        # parts indices:
-        # 0 model, 1 size, 2 liner, 3 electrode, 4 body, 5 display,
-        # 6 output, 7 power, 8 options
-        while len(parts) < 9:
-            parts.append("")
-
-        _, size_code, liner_code, electrode_code, body_code, display_code, output_code, power_code, options_code = parts[:9]
-
-        # Apply defaults for any missing segment codes
-        size_code = size_code or "4"
-        liner_code = liner_code or "R"
-        electrode_code = electrode_code or "S"
-        body_code = body_code or "F"
-        display_code = display_code or "I"
-        output_code = output_code or "A"
-        power_code = power_code or "V"
-        options_code = options_code or "00"
-
-        segments: List[Dict[str, Any]] = []
-        adders_total = 0.0
-
-        # Helper to build segment entries
-        def add_segment(
-            index: int,
-            segment_name: str,
-            key: str,
-            code: str,
-            options: Dict[str, Dict[str, Any]],
-        ) -> None:
-            nonlocal adders_total, segments
-
-            info = options.get(code)
-            if info is None:
-                description = f"Unknown code {code}"
-                adder = 0.0
-            else:
-                description = info["description"]
-                adder = float(info.get("adder", 0.0))
-
-            adders_total += adder
-
-            segments.append(
-                {
-                    "segment_index": index,
-                    "segment_name": segment_name,
-                    "key": key,
-                    "code": code,
-                    "description": description,
-                    "adder": adder,
-                }
-            )
-
-        add_segment(1, "Size", "size", size_code, SIZE_OPTIONS)
-        add_segment(2, "Liner material", "liner", liner_code, LINER_OPTIONS)
-        add_segment(3, "Electrode material", "electrodes", electrode_code, ELECTRODE_OPTIONS)
-        add_segment(4, "Body style", "body", body_code, BODY_OPTIONS)
-        add_segment(5, "Display style", "display", display_code, DISPLAY_OPTIONS)
-        add_segment(6, "Output signal", "output", output_code, OUTPUT_OPTIONS)
-        add_segment(7, "Power supply", "power", power_code, POWER_OPTIONS)
-        add_segment(8, "Options", "options", options_code, OPTIONS_OPTIONS)
-
-        final_price = BASE_PRICE + adders_total
-
-        return {
-            "model": self.model,
-            "base_price": BASE_PRICE,
-            "adders_total": adders_total,
-            "final_price": final_price,
-            "segments": segments,
-        }
+        return super().quote(part_number)

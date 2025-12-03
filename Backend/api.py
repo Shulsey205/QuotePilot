@@ -14,6 +14,11 @@ from Backend.PartNumberEngine.base_engine import (
 from Backend.PartNumberEngine.nl_qpsah200s import (
     interpret_qpsah200s_description,
 )
+from Backend.PartNumberEngine.qpmag_engine import QPMAGEngine
+
+
+# Explicitly ensure QPMAG is registered in the shared ENGINE_REGISTRY.
+ENGINE_REGISTRY["QPMAG"] = QPMAGEngine
 
 
 # --------------------------------------------------------------------------------------
@@ -24,7 +29,7 @@ from Backend.PartNumberEngine.nl_qpsah200s import (
 app = FastAPI(
     title="QuotePilot API",
     description="Quote engine for QuotePilot demo models.",
-    version="1.4.0",
+    version="1.4.2",
 )
 
 app.add_middleware(
