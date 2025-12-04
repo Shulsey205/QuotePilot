@@ -2,370 +2,389 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>QuotePilot Demo</title>
+    <title>QuotePilot Demo UI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         :root {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: #111827;
-            background: #f3f4f6;
+            color-scheme: light dark;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background: #f3f4f6;
+            background: radial-gradient(circle at top, #020617, #020617 40%, #020617 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
         .page {
-            max-width: 960px;
-            margin: 32px auto;
-            padding: 24px;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            max-width: 1100px;
+            width: 100%;
+            margin: 24px 16px 32px;
+            padding: 24px 20px 28px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow:
+                0 24px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.8);
         }
 
-        h1 {
-            margin-top: 0;
-            font-size: 1.8rem;
-            letter-spacing: 0.02em;
+        header {
+            margin-bottom: 18px;
         }
 
-        .subheading {
-            margin-bottom: 24px;
-            color: #4b5563;
+        header h1 {
+            margin: 0 0 4px;
+            font-size: 24px;
+            letter-spacing: -0.02em;
         }
 
-        .form-grid {
+        header p {
+            margin: 0;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .layout {
             display: grid;
-            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.7fr);
-            gap: 24px;
-            align-items: start;
+            grid-template-columns: minmax(0, 1.6fr) minmax(0, 2.2fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
         }
 
         .card {
-            background: #f9fafb;
-            border-radius: 10px;
-            padding: 16px 18px;
-            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 14px 14px 16px;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(55, 65, 81, 0.9);
+        }
+
+        .card h2 {
+            margin: 0 0 6px;
+            font-size: 15px;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 13px;
+            color: #9ca3af;
         }
 
         label {
             display: block;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-            color: #374151;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #e5e7eb;
         }
 
-        select,
-        input[type="text"],
         textarea {
             width: 100%;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            font-size: 0.9rem;
-            box-sizing: border-box;
-            background: #ffffff;
-        }
-
-        textarea {
-            min-height: 110px;
+            min-height: 90px;
             resize: vertical;
+            border-radius: 10px;
+            border: 1px solid rgba(75, 85, 99, 0.9);
+            background: rgba(15, 23, 42, 0.95);
+            color: #e5e7eb;
+            padding: 10px 11px;
+            font-size: 13px;
+            outline: none;
         }
 
-        .hint {
-            font-size: 0.8rem;
+        textarea::placeholder {
             color: #6b7280;
-            margin-top: 2px;
+            opacity: 1;
         }
 
-        .row {
-            margin-bottom: 12px;
+        textarea:focus {
+            border-color: rgba(59, 130, 246, 0.9);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.75);
         }
 
-        .actions {
-            margin-top: 12px;
+        .input-footer {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
             gap: 8px;
+        }
+
+        .help-text {
+            font-size: 11px;
+            color: #6b7280;
         }
 
         button {
             border-radius: 999px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
             border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
+            background: linear-gradient(135deg, #22c55e, #0ea5e9);
+            color: #020617;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow:
+                0 16px 30px rgba(34, 197, 94, 0.4),
+                0 0 0 1px rgba(15, 23, 42, 0.8);
+            transition:
+                transform 0.12s ease-out,
+                box-shadow 0.12s ease-out,
+                filter 0.12s ease-out;
         }
 
-        .btn-primary {
-            background: #2563eb;
-            color: #ffffff;
+        button span {
+            font-size: 16px;
+            line-height: 1;
         }
 
-        .btn-secondary {
-            background: #e5e7eb;
-            color: #111827;
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+            box-shadow:
+                0 20px 40px rgba(56, 189, 248, 0.45),
+                0 0 0 1px rgba(15, 23, 42, 0.8);
         }
 
-        .summary {
-            margin-top: 8px;
-            padding: 10px 12px;
-            background: #eff6ff;
-            border-radius: 8px;
-            border: 1px solid #bfdbfe;
-            font-size: 0.9rem;
+        button:active {
+            transform: translateY(0);
+            box-shadow:
+                0 10px 24px rgba(34, 197, 94, 0.36),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
         }
 
-        .summary-item {
-            margin-bottom: 4px;
+        button:disabled {
+            opacity: 0.7;
+            cursor: default;
+            transform: none;
+            box-shadow:
+                0 10px 20px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.85);
         }
 
-        .summary-label {
-            font-weight: 600;
+        .error-box {
+            border-radius: 10px;
+            padding: 8px 10px;
+            background: rgba(127, 29, 29, 0.9);
+            border: 1px solid rgba(248, 113, 113, 0.9);
+            font-size: 12px;
+            color: #fee2e2;
+            margin-bottom: 8px;
+            white-space: pre-line;
         }
 
-        pre {
-            margin: 0;
-            padding: 12px;
-            background: #111827;
-            color: #e5e7eb;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            overflow-x: auto;
+        .segments-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 6px;
         }
 
-        .results-card {
-            margin-top: 16px;
+        .segments-table th,
+        .segments-table td {
+            padding: 6px 6px;
+            text-align: left;
+            border-bottom: 1px solid rgba(55, 65, 81, 0.9);
         }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            background: #e5e7eb;
-            color: #374151;
+        .segments-table th {
+            font-weight: 500;
+            color: #d1d5db;
+            font-size: 11px;
         }
 
-        .badge-nl {
-            background: #fef3c7;
-            color: #92400e;
+        .segments-table td.code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 11px;
         }
 
-        .nl-note {
-            font-size: 0.8rem;
+        .segments-table td.adder {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .no-result {
+            font-size: 12px;
             color: #6b7280;
             margin-top: 4px;
         }
 
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
+        .price-highlight {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .price-sub {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .meta-pill {
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(75, 85, 99, 0.9);
         }
     </style>
 </head>
 <body>
 <div class="page">
-    <h1>QuotePilot demo</h1>
-    <p class="subheading">
-        Choose a model, enter a part number or a plain-English description, and QuotePilot will return
-        the full breakdown and price.
-    </p>
+    <header>
+        <a href="/" class="back-link">
+            <span>←</span>
+            <span>Back to QuotePilot homepage</span>
+        </a>
+        <h1>QuotePilot demo interface</h1>
+        <p>Type what you need, and QuotePilot will detect the product and build a full quote.</p>
+    </header>
 
-    <div class="form-grid">
-        <!-- Left: inputs -->
-        <div class="card">
-            <div class="row">
-                <label for="model">Model</label>
-                <select id="model">
-                    <option value="QPSAH200S">QPSAH200S – DP transmitter</option>
-                    <option value="QPMAG">QPMAG – Magnetic flowmeter</option>
-                </select>
-                <div class="hint">
-                    QPSAH200S supports both part numbers and natural-language descriptions.
-                    QPMAG currently supports part numbers only.
-                </div>
-            </div>
+    <div class="layout">
+        <section class="card">
+            <h2>Enter your request</h2>
 
-            <div class="row">
-                <label for="partNumber">Part number</label>
-                <input id="partNumber" type="text" />
-                <div class="hint">
-                    Leave blank if you want to use natural-language description for QPSAH200S.
-                </div>
-            </div>
+            <label for="inputText">Request or part number</label>
+            <textarea id="inputText" placeholder="What can we quote today?"></textarea>
 
-            <div class="row">
-                <label for="description">
-                    Description (plain English)
-                </label>
-                <textarea id="description"
-                          placeholder="Example: DP transmitter, 0–150 inches, stainless wetted parts, explosion-proof, no display"></textarea>
-                <div class="hint">
-                    Natural-language interpretation is available for QPSAH200S only. For QPMAG, use a part number.
-                </div>
-            </div>
-
-            <div class="actions">
-                <button id="btnQuote" class="btn-primary">
-                    Run quote
-                </button>
-                <button id="btnBaseline" class="btn-secondary" type="button">
-                    Use baseline part number
+            <div class="input-footer">
+                <div id="statusText" class="help-text">Press “Get quote” to run the engine.</div>
+                <button id="quoteButton">
+                    <span>▶</span>
+                    <span>Get quote</span>
                 </button>
             </div>
-        </div>
+        </section>
 
-        <!-- Right: summary + raw JSON -->
-        <div class="card results-card">
-            <div class="row">
-                <span class="badge" id="badgeModel">Model: QPSAH200S</span>
+        <section class="card">
+            <h2>Quote result</h2>
+            <div id="errorBox" class="error-box" style="display: none;"></div>
+            <div id="resultContainer">
+                <div class="no-result">No quote yet. Submit a request to see the full breakdown here.</div>
             </div>
-            <div class="summary" id="summary">
-                <div class="summary-item">
-                    <span class="summary-label">Part number:</span>
-                    <span id="summaryPart">–</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Base price:</span>
-                    <span id="summaryBase">–</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Total adders:</span>
-                    <span id="summaryAdders">–</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Final price:</span>
-                    <span id="summaryFinal">–</span>
-                </div>
-                <div class="summary-item" id="nlBadgeRow" style="display:none;">
-                    <span class="badge badge-nl">Natural-language interpretation</span>
-                </div>
-                <div class="nl-note" id="nlNote" style="display:none;">
-                    The part number above was built from your description. See the segments
-                    and NL details in the JSON response below.
-                </div>
-            </div>
-
-            <div class="row" style="margin-top: 12px;">
-                <label>Raw response</label>
-                <pre id="rawResponse">{}</pre>
-            </div>
-        </div>
+        </section>
     </div>
 </div>
 
 <script>
-    const BASELINES = {
-        "QPSAH200S": "QPSAH200S-A-M-G-3-C-3-1-1-C-1-02",
-        "QPMAG": "QPMAG-04-PT-SS-F1-C-1-1-C-00"
-    };
+    async function runQuote() {
+        const text = document.getElementById("inputText").value.trim();
+        const statusEl = document.getElementById("statusText");
+        const button = document.getElementById("quoteButton");
+        const errorBox = document.getElementById("errorBox");
+        const resultEl = document.getElementById("resultContainer");
 
-    const modelSelect = document.getElementById("model");
-    const partInput = document.getElementById("partNumber");
-    const descInput = document.getElementById("description");
-    const btnQuote = document.getElementById("btnQuote");
-    const btnBaseline = document.getElementById("btnBaseline");
-
-    const badgeModel = document.getElementById("badgeModel");
-    const summaryPart = document.getElementById("summaryPart");
-    const summaryBase = document.getElementById("summaryBase");
-    const summaryAdders = document.getElementById("summaryAdders");
-    const summaryFinal = document.getElementById("summaryFinal");
-    const rawResponse = document.getElementById("rawResponse");
-    const nlBadgeRow = document.getElementById("nlBadgeRow");
-    const nlNote = document.getElementById("nlNote");
-
-    function setBaselineForCurrentModel() {
-        const model = modelSelect.value;
-        const baseline = BASELINES[model] || "";
-        partInput.value = baseline;
-    }
-
-    modelSelect.addEventListener("change", () => {
-        const model = modelSelect.value;
-        badgeModel.textContent = "Model: " + model;
-        setBaselineForCurrentModel();
-
-        // Clear NL badge/note when switching models
-        nlBadgeRow.style.display = "none";
-        nlNote.style.display = "none";
-    });
-
-    btnBaseline.addEventListener("click", (event) => {
-        event.preventDefault();
-        setBaselineForCurrentModel();
-    });
-
-    btnQuote.addEventListener("click", async (event) => {
-        event.preventDefault();
-
-        const model = modelSelect.value;
-        const partNumber = partInput.value.trim();
-        const description = descInput.value.trim();
-
-        const payload = { model: model };
-
-        if (description && !partNumber) {
-            payload.description = description;
-        } else {
-            payload.part_number = partNumber;
-            if (description) {
-                payload.description = description;
-            }
+        if (!text) {
+            errorBox.style.display = "block";
+            errorBox.textContent = "Please enter a request or part number first.";
+            resultEl.innerHTML = '<div class="no-result">No quote yet.</div>';
+            return;
         }
 
-        rawResponse.textContent = "Loading...";
-        nlBadgeRow.style.display = "none";
-        nlNote.style.display = "none";
+        errorBox.style.display = "none";
+        button.disabled = true;
+        statusEl.textContent = "Running quote…";
 
         try {
-            const resp = await fetch("/quote", {
+            const response = await fetch("/auto-quote", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ input_text: text })
             });
 
-            const data = await resp.json();
+            const data = await response.json();
 
-            rawResponse.textContent = JSON.stringify(data, null, 2);
-
-            if (!resp.ok || data.success === false) {
-                summaryPart.textContent = "Error";
-                summaryBase.textContent = "–";
-                summaryAdders.textContent = "–";
-                summaryFinal.textContent = "–";
+            if (!response.ok) {
+                errorBox.style.display = "block";
+                errorBox.textContent = data.detail || "Unknown error.";
+                resultEl.innerHTML = '<div class="no-result">Error.</div>';
                 return;
             }
 
-            summaryPart.textContent = data.part_number || "–";
-            summaryBase.textContent = data.base_price != null ? String(data.base_price) : "–";
-            summaryAdders.textContent = data.total_adders != null ? String(data.total_adders) : "–";
-            summaryFinal.textContent = data.final_price != null ? String(data.final_price) : "–";
-
-            if (data.natural_language) {
-                nlBadgeRow.style.display = "block";
-                nlNote.style.display = "block";
-            }
-
+            renderResult(data);
         } catch (err) {
-            rawResponse.textContent = "Error calling /quote: " + err;
-            summaryPart.textContent = "Error";
-            summaryBase.textContent = "–";
-            summaryAdders.textContent = "–";
-            summaryFinal.textContent = "–";
+            errorBox.style.display = "block";
+            errorBox.textContent = "Unexpected error contacting server.";
+        } finally {
+            button.disabled = false;
+            statusEl.textContent = "Press “Get quote” to run the engine.";
         }
-    });
+    }
 
-    // Initialize UI with default baseline
-    setBaselineForCurrentModel();
+    function renderResult(payload) {
+        const resultEl = document.getElementById("resultContainer");
+
+        const model = payload.model || "Unknown";
+        const result = payload.result || {};
+        const partNumber = result.part_number || result.partNumber || "(none)";
+        const basePrice = result.base_price ?? null;
+        const totalAdders = result.total_adders ?? null;
+        const finalPrice = result.final_price ?? null;
+        const segments = result.segments || [];
+
+        let summary = `
+            <div><strong>Model detected:</strong> ${model}</div>
+            <div><strong>Part number:</strong> ${partNumber}</div>
+        `;
+
+        if (finalPrice !== null) {
+            summary += `<div class="price-highlight">$${Number(finalPrice).toFixed(2)}</div>`;
+        }
+
+        if (basePrice !== null || totalAdders !== null) {
+            summary += `<div class="price-sub">`;
+            if (basePrice !== null) summary += `base $${basePrice}`;
+            if (totalAdders !== null) summary += ` + adders $${totalAdders}`;
+            summary += `</div>`;
+        }
+
+        let table = "";
+        if (segments.length) {
+            table += `<table class="segments-table">
+                <thead><tr>
+                    <th>Segment</th>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th style="text-align:right;">Adder</th>
+                </tr></thead><tbody>`;
+            for (const seg of segments) {
+                table += `<tr>
+                    <td>${seg.label || seg.key}</td>
+                    <td class="code">${seg.code}</td>
+                    <td>${seg.description}</td>
+                    <td style="text-align:right;">$${seg.adder}</td>
+                </tr>`;
+            }
+            table += `</tbody></table>`;
+        }
+
+        resultEl.innerHTML = `${summary}${table}`;
+    }
+
+    document.getElementById("quoteButton").addEventListener("click", runQuote);
 </script>
 </body>
 </html>
