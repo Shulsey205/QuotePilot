@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +24,7 @@ from Backend.PartNumberEngine.nl_qpmag import (
 app = FastAPI(
     title="QuotePilot API",
     description="Quote engine for QuotePilot demo models.",
-    version="1.7.0",
+    version="1.8.0",
 )
 
 app.add_middleware(
@@ -106,6 +106,48 @@ def detect_model_from_text(text: str) -> str:
         "Could not determine which model to use from the text. "
         "Try mentioning 'DP transmitter' or 'mag meter', or start with a QPSAH200S/QPMAG part number."
     )
+
+
+# --------------------------------------------------------------------------------------
+# Helpers to normalize engine outputs
+# --------------------------------------------------------------------------------------
+
+def _normalize_dp_segments_for_ui(engine: Any, result: Dict[str, Any]) -> None:
+    """
+    QPSAH200S engine returns segments as a dict keyed by segment name.
+    The UI expects a list of segment dicts (like QPMAG uses).
+
+    This function mutates result["segments"] into a list so both models
+    look the same to the frontend.
+    """
+    seg_dict = result.get("segments")
+    if not isinstance(seg_dict, dict):
+        return
+
+    master = getattr(engine, "master_segments", None)
+    if not isinstance(master, dict):
+        return
+
+    ordered: List[Dict[str, Any]] = []
+
+    # master is indexed 1..N; keep that order
+    for index in sorted(master.keys()):
+        seg_def = master[index]
+        key = seg_def.get("key")
+        label = seg_def.get("name") or seg_def.get("label") or key
+        seg_info = seg_dict.get(key, {}) or {}
+
+        ordered.append(
+            {
+                "key": key,
+                "label": label,
+                "code": seg_info.get("code", ""),
+                "description": seg_info.get("description", ""),
+                "adder": float(seg_info.get("adder", 0.0)),
+            }
+        )
+
+    result["segments"] = ordered
 
 
 # --------------------------------------------------------------------------------------
@@ -191,6 +233,10 @@ def run_quote_for_model(model_name: str, input_text: str) -> Dict[str, Any]:
         if extras:
             detail = detail + " | " + " | ".join(extras)
         raise HTTPException(status_code=400, detail=detail)
+
+    # Normalize DP segments so UI can render a table just like MAG
+    if model_name == "QPSAH200S":
+        _normalize_dp_segments_for_ui(engine, result)
 
     return result
 
