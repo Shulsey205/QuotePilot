@@ -1,362 +1,430 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>QuotePilot • Interactive Quote Engine</title>
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>QuotePilot – Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <style>
-        :root {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color-scheme: light dark;
+      :root {
+        --bg-page: radial-gradient(circle at top, #e5f0ff 0, #f3f4f6 55%);
+        --bg-card: #ffffff;
+        --bg-panel: #f9fafb;
+        --border-subtle: #e5e7eb;
+        --text-main: #111827;
+        --text-muted: #4b5563;
+        --text-soft: #9ca3af;
+        --primary: #2563eb;
+        --primary-strong: #1d4ed8;
+        --primary-soft: rgba(37, 99, 235, 0.1);
+        --chip-bg: #e5f0ff;
+        --chip-text: #1d4ed8;
+        --shadow-card: 0 10px 28px rgba(15, 23, 42, 0.14);
+        --shadow-primary: 0 8px 20px rgba(37, 99, 235, 0.45);
+        --button-secondary-bg: #e5e7eb;
+        --button-secondary-hover: #d1d5db;
+        --button-outline-border: #d1d5db;
+      }
+
+      html[data-theme="dark"] {
+        --bg-page: radial-gradient(circle at top, #020617 0, #020617 55%);
+        --bg-card: #020617;
+        --bg-panel: #020617;
+        --border-subtle: #1f2937;
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --text-soft: #6b7280;
+        --primary: #60a5fa;
+        --primary-strong: #3b82f6;
+        --primary-soft: rgba(96, 165, 250, 0.18);
+        --chip-bg: rgba(55, 65, 81, 0.9);
+        --chip-text: #e5e7eb;
+        --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.9);
+        --shadow-primary: 0 10px 26px rgba(59, 130, 246, 0.6);
+        --button-secondary-bg: #111827;
+        --button-secondary-hover: #1f2937;
+        --button-outline-border: #374151;
+      }
+
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        color: var(--text-main);
+        background-color: #f3f4f6;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-page);
+      }
+
+      .page {
+        max-width: 960px;
+        margin: 32px auto 48px auto;
+        padding: 0 16px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border-radius: 14px;
+        padding: 24px 26px 28px 26px;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-subtle);
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+
+      .logo-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-svg {
+        width: 130px;
+        height: auto;
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav-links a {
+        font-size: 14px;
+        color: var(--text-muted);
+        text-decoration: none;
+        margin-left: 16px;
+      }
+
+      .nav-links a:hover {
+        color: var(--text-main);
+      }
+
+      .theme-toggle {
+        border-radius: 999px;
+        border: 1px solid var(--button-outline-border);
+        padding: 6px 12px;
+        font-size: 13px;
+        background: transparent;
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .theme-toggle span.icon {
+        font-size: 14px;
+      }
+
+      .hero {
+        margin-top: 8px;
+        margin-bottom: 20px;
+      }
+
+      .hero-title {
+        font-size: 28px;
+        line-height: 1.25;
+        margin-bottom: 8px;
+      }
+
+      .hero-subtitle {
+        font-size: 15px;
+        color: var(--text-muted);
+        max-width: 560px;
+      }
+
+      .hero-actions {
+        margin-top: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        border-radius: 999px;
+        padding: 9px 18px;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        box-shadow: var(--shadow-primary);
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-strong);
+      }
+
+      .btn-secondary {
+        background: var(--button-secondary-bg);
+        color: var(--text-main);
+      }
+
+      .btn-secondary:hover {
+        background: var(--button-secondary-hover);
+      }
+
+      .hero-footnote {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 24px;
+        margin-top: 24px;
+      }
+
+      .panel {
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        padding: 16px 18px;
+        background: var(--bg-panel);
+      }
+
+      .panel h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+
+      .panel p {
+        margin: 4px 0;
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      .list {
+        margin: 8px 0 0 0;
+        padding-left: 18px;
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      .list li {
+        margin-bottom: 4px;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .pill {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--chip-bg);
+        color: var(--chip-text);
+      }
+
+      .footer {
+        margin-top: 18px;
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+
+      @media (max-width: 768px) {
+        .grid {
+          grid-template-columns: minmax(0, 1fr);
         }
 
-        * {
-            box-sizing: border-box;
+        header {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle at top left, #1f2933, #020617 55%);
-            color: #e5e7eb;
-            min-height: 100vh;
-            display: flex;
-            align-items: stretch;
-            justify-content: center;
+        .nav-right {
+          align-self: stretch;
+          justify-content: space-between;
         }
-
-        .page {
-            max-width: 1080px;
-            width: 100%;
-            margin: 32px 16px;
-            padding: 32px 24px;
-            border-radius: 20px;
-            background: rgba(15, 23, 42, 0.96);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            box-shadow:
-                0 24px 70px rgba(15, 23, 42, 0.9),
-                0 0 0 1px rgba(15, 23, 42, 0.8);
-            display: grid;
-            grid-template-columns: minmax(0, 3fr) minmax(0, 2.2fr);
-            gap: 32px;
-        }
-
-        @media (max-width: 800px) {
-            .page {
-                grid-template-columns: minmax(0, 1fr);
-                padding: 24px 18px;
-            }
-        }
-
-        .tagline {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(15, 118, 110, 0.16);
-            border: 1px solid rgba(45, 212, 191, 0.45);
-            font-size: 12px;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 14px;
-            gap: 8px;
-        }
-
-        .tag-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            background: #22c55e;
-            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
-        }
-
-        h1 {
-            margin: 0 0 10px;
-            font-size: 34px;
-            line-height: 1.1;
-            letter-spacing: -0.03em;
-        }
-
-        .subheadline {
-            margin: 0 0 20px;
-            font-size: 16px;
-            line-height: 1.55;
-            color: #cbd5f5;
-            max-width: 540px;
-        }
-
-        .hero-highlight {
-            color: #5eead4;
-        }
-
-        .hero-note {
-            font-size: 13px;
-            color: #9ca3af;
-            margin-bottom: 24px;
-        }
-
-        .buttons-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .primary-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 11px 22px;
-            border-radius: 999px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            background: linear-gradient(135deg, #22c55e, #0ea5e9);
-            color: #020617;
-            box-shadow:
-                0 18px 35px rgba(34, 197, 94, 0.4),
-                0 0 0 1px rgba(15, 23, 42, 0.5);
-            transition:
-                transform 0.12s ease-out,
-                box-shadow 0.12s ease-out,
-                filter 0.12s ease-out;
-            gap: 8px;
-        }
-
-        .primary-button span {
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        .primary-button:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.05);
-            box-shadow:
-                0 22px 45px rgba(56, 189, 248, 0.45),
-                0 0 0 1px rgba(15, 23, 42, 0.5);
-        }
-
-        .primary-button:active {
-            transform: translateY(0);
-            box-shadow:
-                0 12px 26px rgba(34, 197, 94, 0.36),
-                0 0 0 1px rgba(15, 23, 42, 0.6);
-        }
-
-        .secondary-text {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .secondary-text strong {
-            color: #e5e7eb;
-            font-weight: 500;
-        }
-
-        .right-panel {
-            border-radius: 18px;
-            padding: 18px 18px 12px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.95));
-            border: 1px solid rgba(148, 163, 184, 0.28);
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .right-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .right-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: #e5e7eb;
-        }
-
-        .badge {
-            font-size: 11px;
-            padding: 3px 9px;
-            border-radius: 999px;
-            border: 1px solid rgba(96, 165, 250, 0.7);
-            color: #bfdbfe;
-            background: rgba(15, 23, 42, 0.8);
-        }
-
-        .models-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 10px;
-        }
-
-        .model-card {
-            border-radius: 14px;
-            padding: 11px 12px;
-            background: rgba(15, 23, 42, 0.96);
-            border: 1px solid rgba(148, 163, 184, 0.35);
-        }
-
-        .model-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .model-name {
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .model-type {
-            font-size: 11px;
-            color: #9ca3af;
-        }
-
-        .pill {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 999px;
-            border: 1px solid rgba(45, 212, 191, 0.52);
-            color: #a5f3fc;
-            background: rgba(8, 47, 73, 0.7);
-        }
-
-        .model-body {
-            font-size: 12px;
-            color: #cbd5f5;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-
-        .model-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 11px;
-            color: #9ca3af;
-        }
-
-        .dot {
-            width: 4px;
-            height: 4px;
-            border-radius: 999px;
-            background: #6b7280;
-            margin: 0 4px;
-        }
-
-        .footer-note {
-            margin-top: 8px;
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        a {
-            color: inherit;
-        }
+      }
     </style>
-</head>
-<body>
-    <main class="page">
-        <section>
-            <div class="tagline">
-                <span class="tag-dot"></span>
-                <span>QuotePilot demo environment</span>
+  </head>
+
+  <body>
+    <div class="page">
+      <div class="card">
+        <header>
+          <div class="logo-wrapper">
+            <svg
+              class="logo-svg"
+              viewBox="0 0 220 120"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 20 L210 60 L10 100 L40 60 Z"
+                fill="none"
+                stroke="#333"
+                stroke-width="4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+              <text
+                x="110"
+                y="115"
+                font-family="Arial, Helvetica, sans-serif"
+                font-size="28"
+                text-anchor="middle"
+                fill="#333"
+              >
+                QuotePilot
+              </text>
+            </svg>
+          </div>
+          <div class="nav-right">
+            <nav class="nav-links">
+              <a href="/ui">Demo</a>
+              <a href="/docs" target="_blank" rel="noreferrer">API docs</a>
+            </nav>
+            <button id="theme-toggle" type="button" class="theme-toggle">
+              <span class="icon" id="theme-icon">🌙</span>
+              <span id="theme-label">Dark</span>
+            </button>
+          </div>
+        </header>
+
+        <main>
+          <section class="hero">
+            <div class="hero-title">
+              Turn natural language into configured quotes in seconds.
+            </div>
+            <div class="hero-subtitle">
+              This demo shows how QuotePilot can understand plain English,
+              choose a model, build a valid part number, and price it instantly
+              for a differential pressure transmitter or magnetic flowmeter.
+            </div>
+            <div class="hero-actions">
+              <a href="/ui" class="btn btn-primary">
+                Open live demo
+              </a>
+              <a
+                href="/docs"
+                class="btn btn-secondary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                View API docs
+              </a>
+            </div>
+            <div class="hero-footnote">
+              No data is saved. This demo runs against a small internal price
+              sheet for two example models.
+            </div>
+          </section>
+
+          <section class="grid">
+            <div class="panel">
+              <h2>What this demo does</h2>
+              <p>
+                The demo focuses on two instruments and a single workflow: type
+                what you need in plain English, and get a configured quote.
+              </p>
+              <ul class="list">
+                <li>QPSAH200S differential pressure transmitter</li>
+                <li>QPMAG magnetic flowmeter</li>
+                <li>Automatic model detection from your description</li>
+                <li>Valid part number generation and pricing</li>
+                <li>Segment breakdown so you can see each selection</li>
+                <li>One-click PDF export of the quote</li>
+              </ul>
+              <div class="pill-row">
+                <div class="pill">DP transmitter</div>
+                <div class="pill">Mag meter</div>
+                <div class="pill">Natural language</div>
+                <div class="pill">Price engine</div>
+                <div class="pill">PDF quote</div>
+              </div>
             </div>
 
-            <h1>
-                Turn complex instrument part numbers into instant, accurate quotes.
-            </h1>
-
-            <p class="subheadline">
-                QuotePilot is a proof of concept quote engine for industrial distributors.
-                It reads structured part numbers or natural language requests and returns a complete configuration and price
-                in real time.
-            </p>
-
-            <p class="hero-note">
-                This page introduces the working demo models and sends you into the live interface where you can try them with your own examples.
-            </p>
-
-            <div class="buttons-row">
-                <a class="primary-button" href="/ui">
-                    <span>▶</span>
-                    <span>Launch demo</span>
-                </a>
+            <div class="panel">
+              <h2>How to try it</h2>
+              <p>On the demo screen, try short, realistic phrases like:</p>
+              <ul class="list">
+                <li>
+                  “DP transmitter, 0–150 inches, explosion-proof, no display.”
+                </li>
+                <li>
+                  “One inch mag meter, PTFE liner, 4–20 mA, Class I Div 2.”
+                </li>
+                <li>
+                  “Mag meter, three inch, EPDM liner, stainless electrodes.”
+                </li>
+              </ul>
+              <p>
+                QuotePilot will detect the correct model, build a part number,
+                price it, and show you a PDF-ready quote layout.
+              </p>
             </div>
+          </section>
 
-            <p class="secondary-text">
-                In the current demo you can:
-                <br />
-                • Configure and price a QPSAH200S differential pressure transmitter  
-                • Configure and price a QPMAG magnetic flowmeter  
-                • See a full breakdown of every segment and price adder in the part number
-            </p>
-        </section>
+          <div class="footer">
+            QuotePilot LLC – prototype demo environment. Prices and
+            configurations are for demonstration only.
+          </div>
+        </main>
+      </div>
+    </div>
 
-        <aside class="right-panel">
-            <div class="right-header">
-                <div>
-                    <div class="right-title">Demo models available</div>
-                    <div class="model-type">Both engines are live behind the demo interface.</div>
-                </div>
-                <span class="badge">Real-time pricing</span>
-            </div>
+    <script>
+      function applyTheme(theme) {
+        const html = document.documentElement;
+        html.setAttribute("data-theme", theme);
+        localStorage.setItem("qp_theme", theme);
 
-            <div class="models-grid">
-                <article class="model-card">
-                    <div class="model-header">
-                        <div>
-                            <div class="model-name">QPSAH200S</div>
-                            <div class="model-type">Differential pressure transmitter</div>
-                        </div>
-                        <span class="pill">DP model</span>
-                    </div>
-                    <p class="model-body">
-                        Enter a structured part number or a short natural language request and the engine builds a valid configuration,
-                        applies segment level price adders, and returns the final price with a full breakdown.
-                    </p>
-                    <div class="model-meta">
-                        <span>Span and range options</span>
-                        <span class="dot"></span>
-                        <span>Wetted and housing materials</span>
-                        <span class="dot"></span>
-                        <span>Display and area classification</span>
-                    </div>
-                </article>
+        const label = document.getElementById("theme-label");
+        const icon = document.getElementById("theme-icon");
+        if (label && icon) {
+          if (theme === "dark") {
+            label.textContent = "Light";
+            icon.textContent = "☀️";
+          } else {
+            label.textContent = "Dark";
+            icon.textContent = "🌙";
+          }
+        }
+      }
 
-                <article class="model-card">
-                    <div class="model-header">
-                        <div>
-                            <div class="model-name">QPMAG</div>
-                            <div class="model-type">Magnetic flowmeter</div>
-                        </div>
-                        <span class="pill">Flow model</span>
-                    </div>
-                    <p class="model-body">
-                        Choose a line size, liner, electrode material, process connection, and options.
-                        QuotePilot converts the choices into a clean part number, calculates the base price and adders,
-                        and shows the full structure segment by segment.
-                    </p>
-                    <div class="model-meta">
-                        <span>Line size driven pricing</span>
-                        <span class="dot"></span>
-                        <span>Material and connection options</span>
-                        <span class="dot"></span>
-                        <span>Built for distributor style catalogs</span>
-                    </div>
-                </article>
-            </div>
+      (function initThemeFromStorage() {
+        const stored = localStorage.getItem("qp_theme");
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-            <p class="footer-note">
-                This is an early demo focused on part number driven quoting.
-                It is not connected to any real manufacturer or live price book.
-            </p>
-        </aside>
-    </main>
-</body>
+        if (stored === "dark" || stored === "light") {
+          applyTheme(stored);
+        } else {
+          applyTheme(prefersDark ? "dark" : "light");
+        }
+      })();
+
+      document
+        .getElementById("theme-toggle")
+        .addEventListener("click", () => {
+          const current =
+            document.documentElement.getAttribute("data-theme") || "light";
+          applyTheme(current === "light" ? "dark" : "light");
+        });
+    </script>
+  </body>
 </html>

@@ -1,390 +1,777 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <title>QuotePilot Demo UI</title>
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>QuotePilot Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <style>
-        :root {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color-scheme: light dark;
-        }
+      :root {
+        --bg-page: #f3f4f6;
+        --bg-card: #ffffff;
+        --bg-card-soft: #f9fafb;
+        --border-subtle: #e5e7eb;
+        --text-main: #111827;
+        --text-muted: #6b7280;
+        --text-soft: #9ca3af;
+        --primary: #2563eb;
+        --primary-strong: #1d4ed8;
+        --primary-soft: rgba(37, 99, 235, 0.08);
+        --button-secondary-bg: #e5e7eb;
+        --button-secondary-hover: #d1d5db;
+        --button-outline-bg: #ffffff;
+        --button-outline-border: #d1d5db;
+        --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.08);
+        --shadow-primary: 0 8px 20px rgba(37, 99, 235, 0.45);
+        --input-border: #d1d5db;
+        --table-header-bg: #f9fafb;
+      }
 
-        * {
-            box-sizing: border-box;
-        }
+      html[data-theme="dark"] {
+        --bg-page: #020617;
+        --bg-card: #020617;
+        --bg-card-soft: #020617;
+        --border-subtle: #1f2937;
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --text-soft: #6b7280;
+        --primary: #60a5fa;
+        --primary-strong: #3b82f6;
+        --primary-soft: rgba(96, 165, 250, 0.2);
+        --button-secondary-bg: #111827;
+        --button-secondary-hover: #1f2937;
+        --button-outline-bg: #020617;
+        --button-outline-border: #374151;
+        --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.9);
+        --shadow-primary: 0 10px 26px rgba(59, 130, 246, 0.6);
+        --input-border: #374151;
+        --table-header-bg: #020617;
+      }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle at top, #020617, #020617 40%, #020617 100%);
-            color: #e5e7eb;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        color: var(--text-main);
+        background-color: var(--bg-page);
+      }
 
-        .page {
-            max-width: 1100px;
-            width: 100%;
-            margin: 24px 16px 32px;
-            padding: 24px 20px 28px;
-            border-radius: 18px;
-            background: rgba(15, 23, 42, 0.98);
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            box-shadow:
-                0 24px 60px rgba(15, 23, 42, 0.9),
-                0 0 0 1px rgba(15, 23, 42, 0.8);
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-page);
+      }
+
+      .page {
+        max-width: 960px;
+        margin: 24px auto 40px auto;
+        padding: 16px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border-radius: 10px;
+        padding: 20px 24px;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-subtle);
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .logo-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-svg {
+        width: 120px;
+        height: auto;
+      }
+
+      .header-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .tagline {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .theme-toggle {
+        border-radius: 999px;
+        border: 1px solid var(--button-outline-border);
+        padding: 6px 12px;
+        font-size: 13px;
+        background: var(--button-outline-bg);
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .theme-toggle span.icon {
+        font-size: 14px;
+      }
+
+      h2 {
+        margin: 18px 0 10px 0;
+        font-size: 18px;
+      }
+
+      .nl-input-wrapper {
+        margin-top: 8px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 80px;
+        border-radius: 8px;
+        border: 1px solid var(--input-border);
+        padding: 10px 12px;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 14px;
+        box-sizing: border-box;
+        color: var(--text-main);
+        background: var(--bg-card-soft);
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 1px var(--primary-soft);
+      }
+
+      .button-row {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button {
+        border-radius: 8px;
+        border: none;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--primary);
+        color: #ffffff;
+        transition: background 0.15s ease, transform 0.05s ease,
+          box-shadow 0.1s ease;
+        box-shadow: var(--shadow-primary);
+      }
+
+      button.secondary {
+        background: var(--button-secondary-bg);
+        color: var(--text-main);
+        box-shadow: none;
+      }
+
+      button.outline {
+        background: var(--button-outline-bg);
+        color: var(--text-main);
+        border: 1px solid var(--button-outline-border);
+        box-shadow: none;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      button:hover:not(:disabled) {
+        background: var(--primary-strong);
+        transform: translateY(-1px);
+      }
+
+      button.secondary:hover:not(:disabled) {
+        background: var(--button-secondary-hover);
+      }
+
+      button.outline:hover:not(:disabled) {
+        background: rgba(148, 163, 184, 0.08);
+      }
+
+      .status {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .status.error {
+        color: #f97373;
+      }
+
+      .results-section {
+        margin-top: 22px;
+        border-top: 1px solid var(--border-subtle);
+        padding-top: 18px;
+      }
+
+      .results-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 24px;
+        align-items: baseline;
+        margin-bottom: 12px;
+      }
+
+      .result-label {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+
+      .result-value {
+        font-size: 16px;
+      }
+
+      .result-main {
+        margin-right: 24px;
+      }
+
+      .price-value {
+        font-weight: 600;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--border-subtle);
+        padding: 8px 10px;
+        text-align: left;
+      }
+
+      th {
+        background: var(--table-header-bg);
+        font-weight: 500;
+      }
+
+      .footer-note {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-soft);
+      }
+
+      .action-row {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .outlook-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      @media (max-width: 640px) {
+        .results-header {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
         header {
-            margin-bottom: 18px;
+          flex-direction: column;
+          align-items: flex-start;
         }
 
-        header h1 {
-            margin: 0 0 4px;
-            font-size: 24px;
-            letter-spacing: -0.02em;
+        .header-actions {
+          align-self: stretch;
+          justify-content: flex-end;
         }
-
-        header p {
-            margin: 0;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.6fr) minmax(0, 2.2fr);
-            gap: 20px;
-        }
-
-        @media (max-width: 900px) {
-            .layout {
-                grid-template-columns: minmax(0, 1fr);
-            }
-        }
-
-        .card {
-            border-radius: 14px;
-            padding: 14px 14px 16px;
-            background: rgba(15, 23, 42, 0.96);
-            border: 1px solid rgba(55, 65, 81, 0.9);
-        }
-
-        .card h2 {
-            margin: 0 0 6px;
-            font-size: 15px;
-        }
-
-        .card p {
-            margin: 0;
-            font-size: 13px;
-            color: #9ca3af;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            margin-bottom: 6px;
-            color: #e5e7eb;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 90px;
-            resize: vertical;
-            border-radius: 10px;
-            border: 1px solid rgba(75, 85, 99, 0.9);
-            background: rgba(15, 23, 42, 0.95);
-            color: #e5e7eb;
-            padding: 10px 11px;
-            font-size: 13px;
-            outline: none;
-        }
-
-        textarea::placeholder {
-            color: #6b7280;
-            opacity: 1;
-        }
-
-        textarea:focus {
-            border-color: rgba(59, 130, 246, 0.9);
-            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.75);
-        }
-
-        .input-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            gap: 8px;
-        }
-
-        .help-text {
-            font-size: 11px;
-            color: #6b7280;
-        }
-
-        button {
-            border-radius: 999px;
-            border: none;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            background: linear-gradient(135deg, #22c55e, #0ea5e9);
-            color: #020617;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow:
-                0 16px 30px rgba(34, 197, 94, 0.4),
-                0 0 0 1px rgba(15, 23, 42, 0.8);
-            transition:
-                transform 0.12s ease-out,
-                box-shadow 0.12s ease-out,
-                filter 0.12s ease-out;
-        }
-
-        button span {
-            font-size: 16px;
-            line-height: 1;
-        }
-
-        button:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.05);
-            box-shadow:
-                0 20px 40px rgba(56, 189, 248, 0.45),
-                0 0 0 1px rgba(15, 23, 42, 0.8);
-        }
-
-        button:active {
-            transform: translateY(0);
-            box-shadow:
-                0 10px 24px rgba(34, 197, 94, 0.36),
-                0 0 0 1px rgba(15, 23, 42, 0.9);
-        }
-
-        button:disabled {
-            opacity: 0.7;
-            cursor: default;
-            transform: none;
-            box-shadow:
-                0 10px 20px rgba(15, 23, 42, 0.9),
-                0 0 0 1px rgba(15, 23, 42, 0.85);
-        }
-
-        .error-box {
-            border-radius: 10px;
-            padding: 8px 10px;
-            background: rgba(127, 29, 29, 0.9);
-            border: 1px solid rgba(248, 113, 113, 0.9);
-            font-size: 12px;
-            color: #fee2e2;
-            margin-bottom: 8px;
-            white-space: pre-line;
-        }
-
-        .segments-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin-top: 6px;
-        }
-
-        .segments-table th,
-        .segments-table td {
-            padding: 6px 6px;
-            text-align: left;
-            border-bottom: 1px solid rgba(55, 65, 81, 0.9);
-        }
-
-        .segments-table th {
-            font-weight: 500;
-            color: #d1d5db;
-            font-size: 11px;
-        }
-
-        .segments-table td.code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 11px;
-        }
-
-        .segments-table td.adder {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .no-result {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
-
-        .price-highlight {
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .price-sub {
-            font-size: 11px;
-            color: #9ca3af;
-        }
-
-        .meta-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 6px;
-            font-size: 11px;
-            color: #9ca3af;
-        }
-
-        .meta-pill {
-            padding: 3px 8px;
-            border-radius: 999px;
-            background: rgba(31, 41, 55, 0.9);
-            border: 1px solid rgba(75, 85, 99, 0.9);
-        }
+      }
     </style>
-</head>
-<body>
-<div class="page">
-    <header>
-        <a href="/" class="back-link">
-            <span>←</span>
-            <span>Back to QuotePilot homepage</span>
-        </a>
-        <h1>QuotePilot demo interface</h1>
-        <p>Type what you need, and QuotePilot will detect the product and build a full quote.</p>
-    </header>
 
-    <div class="layout">
-        <section class="card">
-            <h2>Enter your request</h2>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  </head>
 
-            <label for="inputText">Request or part number</label>
-            <textarea id="inputText" placeholder="What can we quote today?"></textarea>
-
-            <div class="input-footer">
-                <div id="statusText" class="help-text">Press “Get quote” to run the engine.</div>
-                <button id="quoteButton">
-                    <span>▶</span>
-                    <span>Get quote</span>
-                </button>
+  <body>
+    <div class="page">
+      <div class="card">
+        <header>
+          <div class="logo-wrapper">
+            <svg
+              class="logo-svg"
+              viewBox="0 0 220 120"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 20 L210 60 L10 100 L40 60 Z"
+                fill="none"
+                stroke="#333"
+                stroke-width="4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+              <text
+                x="110"
+                y="115"
+                font-family="Arial, Helvetica, sans-serif"
+                font-size="28"
+                text-anchor="middle"
+                fill="#333"
+              >
+                QuotePilot
+              </text>
+            </svg>
+          </div>
+          <div class="header-text">
+            <div class="tagline">
+              Natural language to configured part numbers and quotes
             </div>
+          </div>
+          <div class="header-actions">
+            <button id="theme-toggle" type="button" class="theme-toggle">
+              <span class="icon" id="theme-icon">🌙</span>
+              <span id="theme-label">Dark</span>
+            </button>
+          </div>
+        </header>
+
+        <section>
+          <h2>Describe what you need</h2>
+          <div class="nl-input-wrapper">
+            <textarea
+              id="nl-input"
+              placeholder="Example: One inch mag meter, PTFE liner, explosion-proof mounting, 4–20 mA output."
+            ></textarea>
+          </div>
+          <div class="button-row">
+            <button id="btn-auto-quote" type="button">
+              Generate quote
+            </button>
+            <button id="btn-clear" type="button" class="secondary">
+              Clear
+            </button>
+          </div>
+          <div id="status" class="status"></div>
         </section>
 
-        <section class="card">
-            <h2>Quote result</h2>
-            <div id="errorBox" class="error-box" style="display: none;"></div>
-            <div id="resultContainer">
-                <div class="no-result">No quote yet. Submit a request to see the full breakdown here.</div>
+        <section
+          class="results-section"
+          id="results-section"
+          style="display: none;"
+        >
+          <div class="results-header">
+            <div class="result-main">
+              <div class="result-label">Model</div>
+              <div class="result-value" id="result-model"></div>
             </div>
+            <div class="result-main">
+              <div class="result-label">Part number</div>
+              <div class="result-value" id="result-part-number"></div>
+            </div>
+            <div>
+              <div class="result-label">Total price</div>
+              <div class="result-value price-value" id="result-price"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="result-label">Segment breakdown</div>
+            <table id="segments-table">
+              <thead>
+                <tr>
+                  <th>Segment</th>
+                  <th>Code</th>
+                  <th>Description</th>
+                  <th>Adder</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="action-row">
+            <button id="btn-download-pdf" type="button" class="outline">
+              Download PDF
+            </button>
+            <button
+              id="btn-outlook-draft"
+              type="button"
+              class="secondary"
+              disabled
+              title="Planned: create an Outlook draft with this quote attached."
+            >
+              Send via Outlook (coming soon)
+            </button>
+          </div>
+          <div class="outlook-hint">
+            The PDF export is live for this demo. Outlook draft creation will be
+            wired in a future phase using server-side PDF and Microsoft Graph.
+          </div>
+
+          <div class="footer-note">
+            This is a prototype demo of QuotePilot. Prices and configurations
+            are for demonstration only.
+          </div>
         </section>
+      </div>
     </div>
-</div>
 
-<script>
-    async function runQuote() {
-        const text = document.getElementById("inputText").value.trim();
-        const statusEl = document.getElementById("statusText");
-        const button = document.getElementById("quoteButton");
-        const errorBox = document.getElementById("errorBox");
-        const resultEl = document.getElementById("resultContainer");
+    <script>
+      // Theme handling shared logic
+      function applyTheme(theme) {
+        const html = document.documentElement;
+        html.setAttribute("data-theme", theme);
+        localStorage.setItem("qp_theme", theme);
 
-        if (!text) {
-            errorBox.style.display = "block";
-            errorBox.textContent = "Please enter a request or part number first.";
-            resultEl.innerHTML = '<div class="no-result">No quote yet.</div>';
-            return;
+        const label = document.getElementById("theme-label");
+        const icon = document.getElementById("theme-icon");
+        if (label && icon) {
+          if (theme === "dark") {
+            label.textContent = "Light";
+            icon.textContent = "☀️";
+          } else {
+            label.textContent = "Dark";
+            icon.textContent = "🌙";
+          }
+        }
+      }
+
+      (function initThemeFromStorage() {
+        const stored = localStorage.getItem("qp_theme");
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+        if (stored === "dark" || stored === "light") {
+          applyTheme(stored);
+        } else {
+          applyTheme(prefersDark ? "dark" : "light");
+        }
+      })();
+
+      document
+        .getElementById("theme-toggle")
+        .addEventListener("click", () => {
+          const current =
+            document.documentElement.getAttribute("data-theme") || "light";
+          applyTheme(current === "light" ? "dark" : "light");
+        });
+
+      const statusEl = document.getElementById("status");
+      const nlInputEl = document.getElementById("nl-input");
+      const resultsSectionEl = document.getElementById("results-section");
+      const modelEl = document.getElementById("result-model");
+      const partNumberEl = document.getElementById("result-part-number");
+      const priceEl = document.getElementById("result-price");
+      const segmentsTableBody = document.querySelector(
+        "#segments-table tbody"
+      );
+
+      const btnAutoQuote = document.getElementById("btn-auto-quote");
+      const btnClear = document.getElementById("btn-clear");
+      const btnDownloadPdf = document.getElementById("btn-download-pdf");
+
+      let lastQuote = null;
+
+      function setStatus(message, isError = false) {
+        if (!message) {
+          statusEl.textContent = "";
+          statusEl.classList.remove("error");
+          return;
+        }
+        statusEl.textContent = message;
+        if (isError) {
+          statusEl.classList.add("error");
+        } else {
+          statusEl.classList.remove("error");
+        }
+      }
+
+      function computeTotalPrice(basePrice, segments) {
+        const base =
+          typeof basePrice === "number" && !isNaN(basePrice) ? basePrice : 0;
+        let adders = 0;
+        if (Array.isArray(segments)) {
+          for (const seg of segments) {
+            const a = seg && typeof seg.adder === "number" ? seg.adder : 0;
+            if (!isNaN(a)) {
+              adders += a;
+            }
+          }
+        }
+        return base + adders;
+      }
+
+      function renderQuote(flatResult) {
+        if (!flatResult || !flatResult.success) {
+          resultsSectionEl.style.display = "none";
+          lastQuote = null;
+          return;
         }
 
-        errorBox.style.display = "none";
-        button.disabled = true;
-        statusEl.textContent = "Running quote…";
+        const model = flatResult.model || "";
+        const partNumber =
+          flatResult.part_number || flatResult.partNumber || "";
+        const segments = Array.isArray(flatResult.segments)
+          ? flatResult.segments
+          : [];
+
+        const basePrice =
+          typeof flatResult.base_price === "number"
+            ? flatResult.base_price
+            : typeof flatResult.total_price === "number"
+            ? flatResult.total_price
+            : 0;
+
+        const totalPrice = computeTotalPrice(basePrice, segments);
+
+        modelEl.textContent = model;
+        partNumberEl.textContent = partNumber;
+        priceEl.textContent =
+          typeof totalPrice === "number"
+            ? "$" + totalPrice.toFixed(2)
+            : "";
+
+        segmentsTableBody.innerHTML = "";
+
+        for (const seg of segments) {
+          const tr = document.createElement("tr");
+          const label = seg.label || seg.name || seg.key || "";
+          const code = seg.code || "";
+          const desc = seg.description || "";
+          const adder =
+            typeof seg.adder === "number"
+              ? "$" + seg.adder.toFixed(2)
+              : "$0.00";
+
+          tr.innerHTML = `
+            <td>${label}</td>
+            <td>${code}</td>
+            <td>${desc}</td>
+            <td>${adder}</td>
+          `;
+          segmentsTableBody.appendChild(tr);
+        }
+
+        resultsSectionEl.style.display = "block";
+        lastQuote = {
+          model,
+          partNumber,
+          totalPrice,
+          segments,
+        };
+      }
+
+      async function requestAutoQuote() {
+        const description = nlInputEl.value.trim();
+        if (!description) {
+          setStatus("Please enter a brief description of what you need.", true);
+          return;
+        }
+
+        setStatus("Generating quote…");
+        btnAutoQuote.disabled = true;
 
         try {
-            const response = await fetch("/auto-quote", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ input_text: text })
-            });
+          const body = {
+            input_text: description,
+          };
 
-            const data = await response.json();
+          const response = await fetch("/auto-quote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
 
-            if (!response.ok) {
-                errorBox.style.display = "block";
-                errorBox.textContent = data.detail || "Unknown error.";
-                resultEl.innerHTML = '<div class="no-result">Error.</div>';
-                return;
-            }
+          if (!response.ok) {
+            const text = await response.text();
+            console.error("Server error body:", text);
+            throw new Error("Server returned status " + response.status);
+          }
 
-            renderResult(data);
+          const data = await response.json();
+          if (!data.success) {
+            setStatus(
+              data.message ||
+                "Unable to generate quote from this description.",
+              true
+            );
+            renderQuote(null);
+            return;
+          }
+
+          const engineResult = data.result || {};
+          const flatResult = {
+            success: true,
+            model: data.model || engineResult.model || "",
+            ...engineResult,
+          };
+
+          renderQuote(flatResult);
+          setStatus("Quote generated.");
         } catch (err) {
-            errorBox.style.display = "block";
-            errorBox.textContent = "Unexpected error contacting server.";
+          console.error(err);
+          setStatus(
+            "An error occurred while generating the quote.",
+            true
+          );
+          renderQuote(null);
         } finally {
-            button.disabled = false;
-            statusEl.textContent = "Press “Get quote” to run the engine.";
+          btnAutoQuote.disabled = false;
         }
-    }
+      }
 
-    function renderResult(payload) {
-        const resultEl = document.getElementById("resultContainer");
+      function clearForm() {
+        nlInputEl.value = "";
+        renderQuote(null);
+        setStatus("");
+      }
 
-        const model = payload.model || "Unknown";
-        const result = payload.result || {};
-        const partNumber = result.part_number || result.partNumber || "(none)";
-        const basePrice = result.base_price ?? null;
-        const totalAdders = result.total_adders ?? null;
-        const finalPrice = result.final_price ?? null;
-        const segments = result.segments || [];
-
-        let summary = `
-            <div><strong>Model detected:</strong> ${model}</div>
-            <div><strong>Part number:</strong> ${partNumber}</div>
-        `;
-
-        if (finalPrice !== null) {
-            summary += `<div class="price-highlight">$${Number(finalPrice).toFixed(2)}</div>`;
+      async function downloadPdf() {
+        if (!lastQuote || !lastQuote.partNumber) {
+          setStatus("Generate a quote before downloading a PDF.", true);
+          return;
         }
 
-        if (basePrice !== null || totalAdders !== null) {
-            summary += `<div class="price-sub">`;
-            if (basePrice !== null) summary += `base $${basePrice}`;
-            if (totalAdders !== null) summary += ` + adders $${totalAdders}`;
-            summary += `</div>`;
-        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          unit: "pt",
+          format: "a4",
+        });
 
-        let table = "";
-        if (segments.length) {
-            table += `<table class="segments-table">
-                <thead><tr>
-                    <th>Segment</th>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th style="text-align:right;">Adder</th>
-                </tr></thead><tbody>`;
-            for (const seg of segments) {
-                table += `<tr>
-                    <td>${seg.label || seg.key}</td>
-                    <td class="code">${seg.code}</td>
-                    <td>${seg.description}</td>
-                    <td style="text-align:right;">$${seg.adder}</td>
-                </tr>`;
+        const marginLeft = 50;
+        let y = 60;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.text("QuotePilot", marginLeft, y);
+        y += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(120);
+        doc.text("Generated quote (demo)", marginLeft, y);
+        doc.setTextColor(0);
+        y += 24;
+
+        doc.setLineWidth(0.5);
+        doc.line(marginLeft, y, 545, y);
+        y += 24;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Model:", marginLeft, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(lastQuote.model || ""), marginLeft + 80, y);
+        y += 18;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Part number:", marginLeft, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(lastQuote.partNumber || ""), marginLeft + 80, y);
+        y += 18;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Total price:", marginLeft, y);
+        doc.setFont("helvetica", "normal");
+        if (typeof lastQuote.totalPrice === "number") {
+          doc.text(
+            "$" + lastQuote.totalPrice.toFixed(2),
+            marginLeft + 80,
+            y
+          );
+        }
+        y += 28;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Segment breakdown", marginLeft, y);
+        y += 14;
+
+        const colX = [
+          marginLeft,
+          marginLeft + 130,
+          marginLeft + 230,
+          marginLeft + 430,
+        ];
+        doc.setFontSize(10);
+        doc.text("Segment", colX[0], y);
+        doc.text("Code", colX[1], y);
+        doc.text("Description", colX[2], y);
+        doc.text("Adder", colX[3], y);
+        y += 10;
+
+        doc.setLineWidth(0.3);
+        doc.line(marginLeft, y, 545, y);
+        y += 12;
+
+        doc.setFont("helvetica", "normal");
+        if (Array.isArray(lastQuote.segments)) {
+          for (const seg of lastQuote.segments) {
+            if (y > 760) {
+              doc.addPage();
+              y = 60;
             }
-            table += `</tbody></table>`;
+            const label = String(seg.label || seg.name || seg.key || "");
+            const code = String(seg.code || "");
+            const desc = String(seg.description || "");
+            const adder =
+              typeof seg.adder === "number"
+                ? "$" + seg.adder.toFixed(2)
+                : "$0.00";
+
+            doc.text(label, colX[0], y);
+            doc.text(code, colX[1], y);
+            doc.text(desc, colX[2], y);
+            doc.text(adder, colX[3], y);
+            y += 14;
+          }
         }
 
-        resultEl.innerHTML = `${summary}${table}`;
-    }
+        y += 20;
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        doc.text(
+          "This PDF is generated by the QuotePilot demo. Values are for demonstration only.",
+          marginLeft,
+          y
+        );
 
-    document.getElementById("quoteButton").addEventListener("click", runQuote);
-</script>
-</body>
+        doc.save(
+          (lastQuote.partNumber || "QuotePilot_Quote") + ".pdf"
+        );
+      }
+
+      btnAutoQuote.addEventListener("click", requestAutoQuote);
+      btnClear.addEventListener("click", clearForm);
+      btnDownloadPdf.addEventListener("click", downloadPdf);
+
+      nlInputEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          requestAutoQuote();
+        }
+      });
+    </script>
+  </body>
 </html>
