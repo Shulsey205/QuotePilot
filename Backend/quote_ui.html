@@ -290,6 +290,39 @@
         margin-top: 4px;
       }
 
+      .advanced-row {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border-subtle);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        font-size: 13px;
+        color: var(--text-soft);
+      }
+
+      .advanced-row label {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      .advanced-row input[type="text"] {
+        border-radius: 6px;
+        border: 1px solid var(--input-border);
+        padding: 6px 8px;
+        font-size: 13px;
+        font-family: inherit;
+        background: var(--bg-card-soft);
+        color: var(--text-main);
+      }
+
+      .advanced-row input[type="text"]:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 1px var(--primary-soft);
+      }
+
       @media (max-width: 640px) {
         .results-header {
           flex-direction: column;
@@ -304,6 +337,11 @@
         .header-actions {
           align-self: stretch;
           justify-content: flex-end;
+        }
+
+        .advanced-row {
+          flex-direction: column;
+          align-items: flex-start;
         }
       }
     </style>
@@ -355,7 +393,7 @@
         </header>
 
         <section>
-          <h2>Describe what you need</h2>
+          <h2>Describe what you need (advanced mode)</h2>
           <div class="nl-input-wrapper">
             <textarea
               id="nl-input"
@@ -370,6 +408,32 @@
               Clear
             </button>
           </div>
+
+          <div class="advanced-row">
+            <span>Advanced: price an exact part number</span>
+            <label>
+              Model
+              <input
+                type="text"
+                id="model-input"
+                placeholder="QPSAH200S or QPMAG"
+                style="width: 150px;"
+              />
+            </label>
+            <label>
+              Part number
+              <input
+                type="text"
+                id="part-input"
+                placeholder="Paste full part number"
+                style="min-width: 220px;"
+              />
+            </label>
+            <button id="btn-exact-quote" type="button" class="outline">
+              Price exact part
+            </button>
+          </div>
+
           <div id="status" class="status"></div>
         </section>
 
@@ -493,6 +557,10 @@
       const btnOutlookDraft = document.getElementById("btn-outlook-draft");
       const emailStatusEl = document.getElementById("email-status");
 
+      const modelInputEl = document.getElementById("model-input");
+      const partInputEl = document.getElementById("part-input");
+      const btnExactQuote = document.getElementById("btn-exact-quote");
+
       let lastQuote = null;
 
       function setStatus(message, isError = false) {
@@ -612,9 +680,19 @@
         setEmailStatus("");
       }
 
+      // Helper: convert snake_case to "Pretty words"
+      function formatSegmentName(segKey) {
+        if (!segKey) return "this segment";
+        const spaced = String(segKey)
+          .replace(/_/g, " ")
+          .trim()
+          .toLowerCase();
+        return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+      }
+
       // New helper: extract a good error message from FastAPI responses
       function extractErrorMessage(status, bodyText, json) {
-        // PartNumberError: {"detail": { ... }}
+        // PartNumberError or standard HTTPException
         if (json && json.detail) {
           const detail = json.detail;
 
@@ -636,15 +714,16 @@
           // detail is an object
           if (typeof detail === "object") {
             if (detail.error_type === "part_number_error") {
-              const seg = detail.segment || "unknown segment";
+              const segKey = detail.segment || "";
+              const friendlySeg = formatSegmentName(segKey);
               const invalid = detail.invalid_code || "invalid code";
               const valid = Array.isArray(detail.valid_codes)
                 ? detail.valid_codes.join(", ")
                 : null;
 
-              let msg = `Invalid code "${invalid}" in segment ${seg}.`;
+              let msg = `Invalid code ${invalid} for ${friendlySeg}.`;
               if (valid) {
-                msg += ` Valid options: ${valid}.`;
+                msg += ` Valid codes: ${valid}.`;
               }
               return msg;
             }
@@ -674,6 +753,9 @@
 
         setStatus("Generating quote…");
         btnAutoQuote.disabled = true;
+        if (btnExactQuote) {
+          btnExactQuote.disabled = true;
+        }
         setEmailStatus("");
         if (btnOutlookDraft) {
           btnOutlookDraft.disabled = true;
@@ -723,11 +805,89 @@
           renderQuote(null);
         } finally {
           btnAutoQuote.disabled = false;
+          if (btnExactQuote) {
+            btnExactQuote.disabled = false;
+          }
+        }
+      }
+
+      async function requestExactQuote() {
+        const model = (modelInputEl.value || "").trim();
+        const partNumber = (partInputEl.value || "").trim();
+
+        if (!model) {
+          setStatus("Enter a model before pricing an exact part number.", true);
+          return;
+        }
+        if (!partNumber) {
+          setStatus("Enter a full part number to price.", true);
+          return;
+        }
+
+        setStatus("Pricing exact part number…");
+        btnExactQuote.disabled = true;
+        if (btnAutoQuote) {
+          btnAutoQuote.disabled = true;
+        }
+        setEmailStatus("");
+        if (btnOutlookDraft) {
+          btnOutlookDraft.disabled = true;
+        }
+
+        try {
+          const body = {
+            model: model,
+            part_number: partNumber,
+          };
+
+          const response = await fetch("/quote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+
+          const text = await response.text();
+          let json = null;
+          try {
+            json = JSON.parse(text);
+          } catch (_) {
+            json = null;
+          }
+
+          if (!response.ok) {
+            console.error("QUOTE error body:", text);
+            const message = extractErrorMessage(response.status, text, json);
+            setStatus(message, true);
+            renderQuote(null);
+            return;
+          }
+
+          const data = json || {};
+          const flatResult = {
+            success: true,
+            ...data,
+          };
+
+          renderQuote(flatResult);
+          setStatus("Exact part-number quote generated.");
+        } catch (err) {
+          console.error(err);
+          setStatus("An error occurred while pricing the part number.", true);
+          renderQuote(null);
+        } finally {
+          btnExactQuote.disabled = false;
+          if (btnAutoQuote) {
+            btnAutoQuote.disabled = false;
+          }
         }
       }
 
       function clearForm() {
         nlInputEl.value = "";
+        if (modelInputEl) modelInputEl.value = "";
+        if (partInputEl) partInputEl.value = "";
         renderQuote(null);
         setStatus("");
         setEmailStatus("");
@@ -937,6 +1097,7 @@
       btnClear.addEventListener("click", clearForm);
       btnDownloadPdf.addEventListener("click", downloadPdf);
       btnOutlookDraft.addEventListener("click", sendToOutlook);
+      btnExactQuote.addEventListener("click", requestExactQuote);
 
       nlInputEl.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {

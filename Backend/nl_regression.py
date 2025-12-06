@@ -58,7 +58,7 @@ def run_case(case: TestCase) -> Dict[str, Any]:
             "nl_result": nl_result,
         }
 
-    # 2) Price it with the real engine
+    # 2) Price it with the real engine (should NOT raise in NL path)
     engine = get_engine(model_from_nl)
     try:
         pricing = engine.price_part_number(part_number)
@@ -117,10 +117,70 @@ def print_report(results: List[Dict[str, Any]]) -> None:
         print(f"    NL part: {nl_part}")
 
         if not result["passed"]:
+            error = result.get("error")
+            if error:
+                print(f"    ERROR: {error}")
             for failure in result.get("failures", []):
                 print(f"    - {failure}")
 
         print()
+
+
+def run_strict_engine_test() -> Dict[str, Any]:
+    """
+    Direct engine-level regression for strict validation.
+
+    This ensures that passing an invalid code to the explicit engine path
+    raises PartNumberError with the structured fields populated.
+    """
+    name = "QPSAH200S invalid output signal code raises structured PartNumberError"
+    engine = get_engine("QPSAH200S")
+
+    test_part = "QPSAH200S-Z-M-G-3-C-3-1-1-C-1-M"  # Z is invalid for output signal
+
+    try:
+        engine.price_part_number(test_part)
+    except PartNumberError as exc:
+        passed = True
+        failures: list[str] = []
+
+        # Segment key/label should clearly map to "output signal type"
+        norm_segment = (exc.segment or "").replace(" ", "").replace("_", "").lower()
+        if "output" not in norm_segment or "signal" not in norm_segment:
+            passed = False
+            failures.append(
+                f"segment mismatch: expected something like 'output_signal_type', got {exc.segment!r}"
+            )
+
+        if exc.invalid_code != "Z":
+            passed = False
+            failures.append(
+                f"invalid_code mismatch: expected 'Z', got {exc.invalid_code!r}"
+            )
+
+        expected_valid = ["A", "B", "C"]
+        if sorted(exc.valid_codes or []) != expected_valid:
+            passed = False
+            failures.append(
+                f"valid_codes mismatch: expected {expected_valid}, got {exc.valid_codes}"
+            )
+
+        return {
+            "name": name,
+            "passed": passed,
+            "failures": failures,
+            "error_obj": exc,
+        }
+
+    # If we get here, no error was raised (which is a failure for this test)
+    return {
+        "name": name,
+        "passed": False,
+        "failures": [
+            "Expected PartNumberError, but engine.price_part_number did not raise."
+        ],
+        "error_obj": None,
+    }
 
 
 def main() -> None:
@@ -137,6 +197,13 @@ def main() -> None:
         TestCase(
             model="QPSAH200S",
             description="DP transmitter, 0 to 800 inWC, stainless steel wetted parts, explosion proof.",
+            expected_model="QPSAH200S",
+            expected_part_prefix="QPSAH200S-A-H-",
+        ),
+        # DP transmitter: extreme span request (should snap to high range)
+        TestCase(
+            model="QPSAH200S",
+            description="DP transmitter, 0 to 5000 inches of water column, stainless wetted parts, general purpose area.",
             expected_model="QPSAH200S",
             expected_part_prefix="QPSAH200S-A-H-",
         ),
@@ -161,6 +228,23 @@ def main() -> None:
         results.append(run_case(case))
 
     print_report(results)
+
+    # ------------------------------------------------------------------
+    # Strict engine validation block
+    # ------------------------------------------------------------------
+    strict_result = run_strict_engine_test()
+
+    print("=" * 72)
+    print("Strict engine validation tests")
+    print("=" * 72)
+    print()
+
+    status = "PASS" if strict_result["passed"] else "FAIL"
+    print(f"[S1] {status}: {strict_result['name']}")
+    if not strict_result["passed"]:
+        for failure in strict_result.get("failures", []):
+            print(f"    - {failure}")
+    print()
 
 
 if __name__ == "__main__":

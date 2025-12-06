@@ -85,7 +85,7 @@ def _get_msal_app() -> msal.ConfidentialClientApplication:
 app = FastAPI(
     title="QuotePilot API",
     description="Quote engine for QuotePilot demo models with Outlook integration.",
-    version="1.7.0",
+    version="1.8.0",
 )
 
 app.add_middleware(
@@ -328,13 +328,8 @@ async def quote(request: QuoteRequest) -> QuoteResponse:
             getattr(exc, "segment", None),
             getattr(exc, "invalid_code", None),
         )
-        error_payload = {
-            "message": str(exc),
-            "error_type": "part_number_error",
-        }
-        for field in ("segment", "invalid_code", "valid_codes"):
-            if hasattr(exc, field):
-                error_payload[field] = getattr(exc, field)
+        error_payload = exc.to_dict()
+        error_payload["error_type"] = "part_number_error"
         raise HTTPException(status_code=422, detail=error_payload) from exc
 
     return _build_quote_response(pricing)
@@ -377,21 +372,45 @@ async def auto_quote(request: AutoQuoteRequest) -> QuoteResponse:
     try:
         pricing = engine.price_part_number(part_number)
     except PartNumberError as exc:
+        # Log full structured error details, but do not surface strict codes to the user.
         logger.info(
-            "AUTO-QUOTE PartNumberError: model=%s part_number=%s segment=%s invalid=%s",
+            "AUTO-QUOTE PartNumberError: model=%s part_number=%s segment=%s invalid=%s valid=%s",
             model,
             part_number,
             getattr(exc, "segment", None),
             getattr(exc, "invalid_code", None),
+            getattr(exc, "valid_codes", None),
         )
-        error_payload = {
-            "message": str(exc),
-            "error_type": "part_number_error",
-        }
-        for field in ("segment", "invalid_code", "valid_codes"):
-            if hasattr(exc, field):
-                error_payload[field] = getattr(exc, field)
-        raise HTTPException(status_code=422, detail=error_payload) from exc
+
+        # Best-effort behavior: try falling back to the engine's baseline part number.
+        fallback_part = getattr(engine, "BASELINE_PART_NUMBER", None)
+
+        if fallback_part:
+            logger.info(
+                "AUTO-QUOTE: falling back to baseline part number: %s", fallback_part
+            )
+            try:
+                pricing = engine.price_part_number(fallback_part)
+            except PartNumberError as exc2:
+                logger.error(
+                    "AUTO-QUOTE baseline fallback also failed: model=%s baseline=%s error=%s",
+                    model,
+                    fallback_part,
+                    exc2,
+                )
+                raise HTTPException(
+                    status_code=500,
+                    detail="We couldn't build a quote from that description. Please adjust the description and try again.",
+                ) from exc2
+        else:
+            logger.error(
+                "AUTO-QUOTE: engine for model=%s has no BASELINE_PART_NUMBER; cannot fallback.",
+                model,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="We couldn't build a quote from that description. Please adjust the description and try again.",
+            ) from exc
 
     if "currency" in nl_result:
         pricing["currency"] = nl_result["currency"]
