@@ -417,15 +417,16 @@
               type="button"
               class="secondary"
               disabled
-              title="Planned: create an Outlook draft with this quote attached."
+              title="Create an Outlook draft with this quote attached."
             >
-              Send via Outlook (coming soon)
+              Send to Outlook
             </button>
           </div>
           <div class="outlook-hint">
-            The PDF export is live for this demo. Outlook draft creation will be
-            wired in a future phase using server-side PDF and Microsoft Graph.
+            Send this quote directly to Outlook as a draft email with the quote
+            PDF attached.
           </div>
+          <div id="email-status" class="status"></div>
 
           <div class="footer-note">
             This is a prototype demo of QuotePilot. Prices and configurations
@@ -489,6 +490,8 @@
       const btnAutoQuote = document.getElementById("btn-auto-quote");
       const btnClear = document.getElementById("btn-clear");
       const btnDownloadPdf = document.getElementById("btn-download-pdf");
+      const btnOutlookDraft = document.getElementById("btn-outlook-draft");
+      const emailStatusEl = document.getElementById("email-status");
 
       let lastQuote = null;
 
@@ -504,6 +507,21 @@
         } else {
           statusEl.classList.remove("error");
         }
+      }
+
+      function setEmailStatus(message, isError = false) {
+        if (!emailStatusEl) return;
+        if (!message) {
+          emailStatusEl.textContent = "";
+          emailStatusEl.classList.remove("error");
+          emailStatusEl.innerHTML = "";
+          return;
+        }
+        emailStatusEl.classList.remove("error");
+        if (isError) {
+          emailStatusEl.classList.add("error");
+        }
+        emailStatusEl.textContent = message;
       }
 
       function computeTotalPrice(basePrice, segments) {
@@ -525,6 +543,10 @@
         if (!flatResult || !flatResult.success) {
           resultsSectionEl.style.display = "none";
           lastQuote = null;
+          if (btnOutlookDraft) {
+            btnOutlookDraft.disabled = true;
+          }
+          setEmailStatus("");
           return;
         }
 
@@ -543,6 +565,7 @@
             : 0;
 
         const totalPrice = computeTotalPrice(basePrice, segments);
+        const currency = flatResult.currency || "USD";
 
         modelEl.textContent = model;
         partNumberEl.textContent = partNumber;
@@ -578,7 +601,68 @@
           partNumber,
           totalPrice,
           segments,
+          currency,
         };
+
+        if (btnOutlookDraft) {
+          btnOutlookDraft.disabled = false;
+          btnOutlookDraft.title =
+            "Create an Outlook draft with this quote attached.";
+        }
+        setEmailStatus("");
+      }
+
+      // New helper: extract a good error message from FastAPI responses
+      function extractErrorMessage(status, bodyText, json) {
+        // PartNumberError: {"detail": { ... }}
+        if (json && json.detail) {
+          const detail = json.detail;
+
+          // Validation errors: [{"msg": "...", ...}]
+          if (Array.isArray(detail)) {
+            const msgs = detail
+              .map((d) => d.msg || d.message || "")
+              .filter(Boolean);
+            if (msgs.length > 0) {
+              return msgs.join("; ");
+            }
+          }
+
+          // detail is a string
+          if (typeof detail === "string") {
+            return detail;
+          }
+
+          // detail is an object
+          if (typeof detail === "object") {
+            if (detail.error_type === "part_number_error") {
+              const seg = detail.segment || "unknown segment";
+              const invalid = detail.invalid_code || "invalid code";
+              const valid = Array.isArray(detail.valid_codes)
+                ? detail.valid_codes.join(", ")
+                : null;
+
+              let msg = `Invalid code "${invalid}" in segment ${seg}.`;
+              if (valid) {
+                msg += ` Valid options: ${valid}.`;
+              }
+              return msg;
+            }
+
+            if (detail.message) {
+              return detail.message;
+            }
+
+            return JSON.stringify(detail);
+          }
+        }
+
+        // If we have plain text from the server, use that
+        if (bodyText && bodyText.trim()) {
+          return bodyText.trim();
+        }
+
+        return "An error occurred while generating the quote.";
       }
 
       async function requestAutoQuote() {
@@ -590,10 +674,14 @@
 
         setStatus("Generating quote…");
         btnAutoQuote.disabled = true;
+        setEmailStatus("");
+        if (btnOutlookDraft) {
+          btnOutlookDraft.disabled = true;
+        }
 
         try {
           const body = {
-            input_text: description,
+            description: description,
           };
 
           const response = await fetch("/auto-quote", {
@@ -606,36 +694,32 @@
 
           if (!response.ok) {
             const text = await response.text();
-            console.error("Server error body:", text);
-            throw new Error("Server returned status " + response.status);
-          }
+            let json = null;
+            try {
+              json = JSON.parse(text);
+            } catch (_) {
+              json = null;
+            }
 
-          const data = await response.json();
-          if (!data.success) {
-            setStatus(
-              data.message ||
-                "Unable to generate quote from this description.",
-              true
-            );
+            console.error("Server error body:", text);
+            const message = extractErrorMessage(response.status, text, json);
+            setStatus(message, true);
             renderQuote(null);
             return;
           }
 
-          const engineResult = data.result || {};
+          const data = await response.json();
+
           const flatResult = {
             success: true,
-            model: data.model || engineResult.model || "",
-            ...engineResult,
+            ...data,
           };
 
           renderQuote(flatResult);
           setStatus("Quote generated.");
         } catch (err) {
           console.error(err);
-          setStatus(
-            "An error occurred while generating the quote.",
-            true
-          );
+          setStatus("An error occurred while generating the quote.", true);
           renderQuote(null);
         } finally {
           btnAutoQuote.disabled = false;
@@ -646,6 +730,7 @@
         nlInputEl.value = "";
         renderQuote(null);
         setStatus("");
+        setEmailStatus("");
       }
 
       async function downloadPdf() {
@@ -762,9 +847,96 @@
         );
       }
 
+      async function sendToOutlook() {
+        if (!lastQuote || !lastQuote.partNumber) {
+          setEmailStatus(
+            "Generate a quote before sending it to Outlook.",
+            true
+          );
+          return;
+        }
+
+        setEmailStatus("Creating Outlook draft…");
+        if (btnOutlookDraft) {
+          btnOutlookDraft.disabled = true;
+        }
+
+        const payload = {
+          quote: {
+            model: lastQuote.model,
+            part_number: lastQuote.partNumber,
+            total_price: lastQuote.totalPrice,
+            currency: lastQuote.currency || "USD",
+            segments: Array.isArray(lastQuote.segments)
+              ? lastQuote.segments
+              : [],
+          },
+        };
+
+        try {
+          const response = await fetch("/create-outlook-draft", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.status === 401) {
+            setEmailStatus(
+              "Not authenticated with Microsoft. Redirecting to sign in…",
+              true
+            );
+            window.location.href = "/auth/login";
+            return;
+          }
+
+          if (!response.ok) {
+            const text = await response.text();
+            console.error("Draft error body:", text);
+            throw new Error("Server returned status " + response.status);
+          }
+
+          const data = await response.json();
+
+          if (data.status === "ok") {
+            const message = "Outlook draft created successfully.";
+            if (emailStatusEl) {
+              emailStatusEl.classList.remove("error");
+              if (data.web_link) {
+                emailStatusEl.innerHTML =
+                  message +
+                  ' <a href="' +
+                  data.web_link +
+                  '" target="_blank" rel="noopener noreferrer">Open in Outlook</a>';
+              } else {
+                emailStatusEl.textContent = message;
+              }
+            }
+          } else {
+            setEmailStatus(
+              data.message ||
+                "There was a problem creating the Outlook draft.",
+              true
+            );
+          }
+        } catch (err) {
+          console.error(err);
+          setEmailStatus(
+            "There was a problem creating the Outlook draft.",
+            true
+          );
+        } finally {
+          if (btnOutlookDraft && lastQuote) {
+            btnOutlookDraft.disabled = false;
+          }
+        }
+      }
+
       btnAutoQuote.addEventListener("click", requestAutoQuote);
       btnClear.addEventListener("click", clearForm);
       btnDownloadPdf.addEventListener("click", downloadPdf);
+      btnOutlookDraft.addEventListener("click", sendToOutlook);
 
       nlInputEl.addEventListener("keydown", (event) => {
         if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {

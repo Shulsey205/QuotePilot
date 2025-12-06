@@ -101,6 +101,7 @@ NL_RULES: List[SegmentRule] = [
         code="B",  # Fieldbus
         patterns=[
             r"\bfieldbus\b",
+            r"\bfoundation\b.*\bfieldbus\b",
         ],
         priority=10,
     ),
@@ -113,16 +114,13 @@ NL_RULES: List[SegmentRule] = [
         priority=10,
     ),
 
-    # Span range (M/H)
+    # Span range (M/H) - textual hints. Numeric ranges are handled separately.
     SegmentRule(
         segment="span_range",
         code="M",
         patterns=[
             r"\blow(?:\s+range|\s+pressure)?\b",
-            r"\b0\s*-\s*150\b",
-            r"\b0\s*-\s*200\b",
-            r"\b0\s*-\s*300\b",
-            r"\b0\s*-\s*400\b",
+            r"\bmedium(?:\s+range|\s+pressure)?\b",
         ],
         priority=5,
     ),
@@ -131,20 +129,19 @@ NL_RULES: List[SegmentRule] = [
         code="H",
         patterns=[
             r"\bhigh(?:\s+range|\s+pressure)?\b",
-            r"\b400\s*in",
-            r"\b500\s*in",
-            r"\b1000\s*in",
+            r"\bwide\s+range\b",
         ],
         priority=6,
     ),
 
-    # Wetted parts (G/A/B/D)
+    # Wetted parts (G/A/D)
     SegmentRule(
         segment="wetted_parts_material",
         code="G",  # 316 SS
         patterns=[
             r"\bstainless\b",
             r"\b316\b",
+            r"\bss\s+wetted\b",
         ],
         priority=5,
     ),
@@ -153,6 +150,7 @@ NL_RULES: List[SegmentRule] = [
         code="A",  # Hastelloy
         patterns=[
             r"\bhastelloy\b",
+            r"\bhc\b\s*wetted\b",
         ],
         priority=6,
     ),
@@ -161,6 +159,7 @@ NL_RULES: List[SegmentRule] = [
         code="D",  # Titanium
         patterns=[
             r"\btitanium\b",
+            r"\bti\s*wetted\b",
         ],
         priority=7,
     ),
@@ -205,6 +204,7 @@ NL_RULES: List[SegmentRule] = [
             r"\bdigital readout\b",
             r"\bgauge face\b",
             r"\bwith display\b",
+            r"\bwith local\b",
         ],
         priority=5,
     ),
@@ -216,6 +216,7 @@ NL_RULES: List[SegmentRule] = [
             r"\bwithout display\b",
             r"\bblind\b",
             r"\bhead only\b",
+            r"\bremote\b\s*mount\b",
         ],
         priority=6,
     ),
@@ -226,6 +227,8 @@ NL_RULES: List[SegmentRule] = [
         code="C",
         patterns=[
             r"\buniversal bracket\b",
+            r"\bpipe\b.*\bmount\b",
+            r"\bwall\b.*\bmount\b",
         ],
         priority=4,
     ),
@@ -253,6 +256,7 @@ NL_RULES: List[SegmentRule] = [
         patterns=[
             r"\bgeneral purpose\b",
             r"\bnon[- ]hazardous\b",
+            r"\bsafe area\b",
         ],
         priority=3,
     ),
@@ -262,6 +266,7 @@ NL_RULES: List[SegmentRule] = [
         patterns=[
             r"\bexplosion[\s-]*proof\b",
             r"\bxp\b",
+            r"\bflameproof\b",
         ],
         priority=10,
     ),
@@ -270,14 +275,15 @@ NL_RULES: List[SegmentRule] = [
         code="3",  # Class I Div 2
         patterns=[
             r"\bclass\s*i\b.*\bdiv\s*2\b",
-            r"\bcl1\s*div2\b",
+            r"\bcl\s*1\s*div\s*2\b",
             r"\bclass\s*1\s*division\s*2\b",
+            r"\bzone\s*2\b",
         ],
         priority=9,
     ),
     SegmentRule(
         segment="area_classification",
-        code="4",  # Canadian
+        code="4",  # Canadian / CSA
         patterns=[
             r"\bcanadian\b",
             r"\bcsa\b",
@@ -296,15 +302,65 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
-def _extract_max_numeric_value(text: str) -> Optional[float]:
-    numbers = re.findall(r"[-+]?\d*\.?\d+", text)
-    values: List[float] = []
-    for n in numbers:
+def _extract_span_numeric_value(text: str) -> Optional[float]:
+    """
+    Try to extract a span max value from the text while ignoring
+    non-span numbers such as:
+      - 4-20 mA
+      - 24 VDC, 120 VAC, etc.
+      - Class 1 Div 2
+    Returns the best-guess max span value in inWC (or generic units).
+    """
+    normalized = _normalize(text)
+
+    # Remove obvious non-span numeric patterns up front
+    # 4-20 mA / 4 to 20 mA
+    normalized = re.sub(r"\b4\s*[-to]+\s*20\s*m?a?\b", " ", normalized)
+    # Voltages
+    normalized = re.sub(r"\b\d+\s*v(dc|ac)?\b", " ", normalized)
+    normalized = re.sub(r"\b\d+\s*volt(s)?\b", " ", normalized)
+    # Class/Division markers
+    normalized = re.sub(r"\bclass\s*\d+\b", " ", normalized)
+    normalized = re.sub(r"\bdiv(ision)?\s*\d+\b", " ", normalized)
+    normalized = re.sub(r"\bzone\s*\d+\b", " ", normalized)
+
+    # Now look for ranges like "0-150 in", "0 to 300 in wc"
+    range_matches = re.findall(
+        r"(\d+(?:\.\d+)?)\s*[-to]+\s*(\d+(?:\.\d+)?)(?:\s*(in(?:ch(?:es)?)?|inwc|in\s*wc|\"))?",
+        normalized,
+    )
+    candidates: List[float] = []
+
+    for low_str, high_str, _unit in range_matches:
         try:
-            values.append(float(n))
+            low = float(low_str)
+            high = float(high_str)
         except ValueError:
             continue
-    return max(values) if values else None
+        # Guard against obviously non-span ranges such as 1-2, 2-3
+        if high <= 5:
+            continue
+        candidates.append(high)
+
+    # Also look for standalone numbers followed by in/inwc etc,
+    # like "150 in wc", "250 inwc", "400 inches of water"
+    single_matches = re.findall(
+        r"(\d+(?:\.\d+)?)\s*(in(?:ch(?:es)?)?(?:\s*of\s*water)?|inwc|in\s*wc|\"|iwc)",
+        normalized,
+    )
+    for value_str, _unit in single_matches:
+        try:
+            value = float(value_str)
+        except ValueError:
+            continue
+        if value <= 5:
+            continue
+        candidates.append(value)
+
+    if not candidates:
+        return None
+
+    return max(candidates)
 
 
 def _apply_rule_table(
@@ -336,25 +392,28 @@ def _apply_span_numeric_hint(
     text: str,
     choices: Dict[str, SegmentChoice],
 ) -> None:
-    max_val = _extract_max_numeric_value(text)
-    if max_val is None:
+    span_max = _extract_span_numeric_value(text)
+    if span_max is None:
         return
 
-    if max_val > 400:
+    if span_max > 400:
         choices["span_range"] = SegmentChoice(
             segment="span_range",
             code="H",
-            reason=f"Max numeric value {max_val} > 400, using high span (H)",
+            reason=f"Inferred span up to {span_max} > 400, using high span (H).",
             priority=100,
         )
     else:
-        if "span_range" not in choices:
-            choices["span_range"] = SegmentChoice(
-                segment="span_range",
-                code="M",
-                reason=f"Max numeric value {max_val} ≤ 400, using medium span (M)",
-                priority=90,
-            )
+        # Medium range for anything up to and including 400
+        existing = choices.get("span_range")
+        candidate = SegmentChoice(
+            segment="span_range",
+            code="M",
+            reason=f"Inferred span up to {span_max} ≤ 400, using medium span (M).",
+            priority=90,
+        )
+        if existing is None or candidate.priority >= existing.priority:
+            choices["span_range"] = candidate
 
 
 def _build_segments_from_choices(
@@ -409,6 +468,17 @@ def _segments_to_part_number(segments: List[Tuple[str, str]]) -> str:
 
 
 def interpret_qpsah200s_description(description: str) -> Dict[str, Any]:
+    """
+    Convert a plain-English QPSAH200S request into a part number and segment explanations.
+
+    Returns:
+        {
+            "success": bool,
+            "part_number": str,
+            "segments": {segment_name: {...}},
+            "errors": [str, ...],
+        }
+    """
     description = (description or "").strip()
 
     if not description:

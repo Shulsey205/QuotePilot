@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Tuple
 
 
 # --------------------------------------------------------------------------------------
@@ -151,11 +151,33 @@ class PartNumberEngine:
             "final_price": final_price,
         }
 
+    def price_part_number(self, part_number: str) -> Dict[str, Any]:
+        """
+        Backwards-compatible wrapper used by existing API code.
+
+        Returns a dict compatible with older code paths that expect:
+
+            {
+                "model": ...,
+                "part_number": ...,
+                "base_price": ...,
+                "segments": [...],
+                "total_adders": ...,
+                "total_price": ...,
+            }
+
+        where total_price mirrors final_price from quote().
+        """
+        result = self.quote(part_number)
+        # Map final_price to total_price for older callers
+        result["total_price"] = result.get("final_price", result.get("total_price"))
+        return result
+
     # -------------------------- internal helpers ------------------------------------
 
     def _parse_and_price_segments(
         self, part_number: str
-    ) -> (List[Dict[str, Any]], float):
+    ) -> Tuple[List[Dict[str, Any]], float]:
         """
         Internal helper used by quote().
 

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from io import BytesIO
 import os
+import logging
 
 import httpx
 import msal
@@ -26,9 +27,17 @@ from Backend.pdf_generator import generate_quote_pdf
 from Backend.email_draft import create_outlook_draft_with_quote
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("quotepilot")
+
+
+# ---------------------------------------------------------------------------
 # Environment / Azure config
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -47,7 +56,7 @@ AZURE_AUTHORITY = "https://login.microsoftonline.com/consumers"
 AZURE_SCOPES = ["User.Read", "Mail.ReadWrite"]
 
 if not AZURE_CLIENT_ID or not AZURE_CLIENT_SECRET:
-    print("WARNING: Azure AD credentials are not fully configured.")
+    logger.warning("Azure AD credentials are not fully configured.")
 
 
 # Global MSAL application and in-memory state/token storage (OK for dev)
@@ -69,14 +78,14 @@ def _get_msal_app() -> msal.ConfidentialClientApplication:
     return msal_app
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # FastAPI app setup
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="QuotePilot API",
     description="Quote engine for QuotePilot demo models with Outlook integration.",
-    version="1.6.1",
+    version="1.7.0",
 )
 
 app.add_middleware(
@@ -88,9 +97,9 @@ app.add_middleware(
 )
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Pydantic models
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 class QuoteSegment(BaseModel):
     key: str
@@ -135,9 +144,9 @@ class CreateDraftRequest(BaseModel):
     quote: QuotePayload
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 def _load_html(filename: str) -> str:
     path = BASE_DIR / filename
@@ -146,15 +155,88 @@ def _load_html(filename: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _normalize_segments(pricing_segments: Any) -> List[QuoteSegment]:
+    """
+    Accept segments from different engine shapes and normalize to List[QuoteSegment].
+
+    Supports:
+      1) List[dict] like:
+         [{"key": "...", "label": "...", "code": "...", "description": "...", "adder": 0.0}, ...]
+
+      2) Dict[str, dict] like:
+         {
+           "span_range": {
+             "code": "M",
+             "description": "...",
+             "adder": 0.0,
+             "default": True
+           },
+           ...
+         }
+    """
+    normalized: List[QuoteSegment] = []
+
+    if pricing_segments is None:
+        return normalized
+
+    # Case 1: dict keyed by segment key
+    if isinstance(pricing_segments, dict):
+        for seg_key, seg_val in pricing_segments.items():
+            if not isinstance(seg_val, dict):
+                continue
+            seg_dict = {
+                "key": seg_val.get("key", seg_key),
+                "label": seg_val.get("label")
+                or seg_val.get("name")
+                or seg_key.replace("_", " ").title(),
+                "code": seg_val.get("code", ""),
+                "description": seg_val.get("description", ""),
+                "adder": float(seg_val.get("adder", 0.0)),
+            }
+            normalized.append(QuoteSegment(**seg_dict))
+        return normalized
+
+    # Case 2: list of dicts
+    if isinstance(pricing_segments, list):
+        for seg in pricing_segments:
+            if not isinstance(seg, dict):
+                continue
+            seg_dict = {
+                "key": seg.get("key") or seg.get("segment_key") or "",
+                "label": seg.get("label")
+                or seg.get("name")
+                or (seg.get("key") or "").replace("_", " ").title(),
+                "code": seg.get("code", ""),
+                "description": seg.get("description", ""),
+                "adder": float(seg.get("adder", 0.0)),
+            }
+            normalized.append(QuoteSegment(**seg_dict))
+        return normalized
+
+    return normalized
+
+
 def _build_quote_response(pricing: Dict[str, Any]) -> QuoteResponse:
-    segments = [QuoteSegment(**seg) for seg in pricing.get("segments", [])]
+    """
+    Convert engine pricing dict into the standardized QuoteResponse model.
+    """
+    segments = _normalize_segments(pricing.get("segments"))
+
+    total_price = pricing.get("total_price")
+    if total_price is None:
+        total_price = pricing.get("final_price")
+
+    if total_price is None:
+        base = float(pricing.get("base_price", 0.0))
+        adders = float(pricing.get("total_adders", 0.0))
+        total_price = base + adders
 
     return QuoteResponse(
         model=pricing["model"],
         part_number=pricing["part_number"],
-        base_price=pricing["base_price"],
-        total_adders=pricing["total_adders"],
-        total_price=pricing["total_price"],
+        base_price=float(pricing.get("base_price", 0.0)),
+        total_adders=float(pricing.get("total_adders", 0.0)),
+        total_price=float(total_price),
         currency=pricing.get("currency", "USD"),
         segments=segments,
     )
@@ -163,10 +245,9 @@ def _build_quote_response(pricing: Dict[str, Any]) -> QuoteResponse:
 def _get_access_token() -> str:
     """
     Get the current access token from memory.
-
-    For development only: we keep a single user's token in memory.
     """
     if not current_tokens or "access_token" not in current_tokens:
+        logger.info("Attempt to use Outlook without valid token.")
         raise HTTPException(status_code=401, detail="Not authenticated with Microsoft. Please sign in.")
     return current_tokens["access_token"]
 
@@ -188,15 +269,12 @@ def _build_default_email_body_html(quote: QuotePayload) -> str:
     """
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Routes: basic
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 async def root() -> HTMLResponse:
-    """
-    Serve the homepage. Falls back to a simple message if homepage.html is missing.
-    """
     homepage_path = BASE_DIR / "homepage.html"
     if homepage_path.exists():
         return HTMLResponse(homepage_path.read_text(encoding="utf-8"))
@@ -205,9 +283,6 @@ async def root() -> HTMLResponse:
 
 @app.get("/ui", response_class=HTMLResponse)
 async def quote_ui() -> HTMLResponse:
-    """
-    Serve the main quote UI.
-    """
     return HTMLResponse(_load_html("quote_ui.html"))
 
 
@@ -216,9 +291,9 @@ async def health() -> Dict[str, str]:
     return {"status": "ok"}
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Routes: quoting
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 @app.post("/quote", response_model=QuoteResponse)
 async def quote(request: QuoteRequest) -> QuoteResponse:
@@ -232,17 +307,35 @@ async def quote(request: QuoteRequest) -> QuoteResponse:
     part_number = request.part_number.strip() if request.part_number else None
     if not part_number:
         try:
-            part_number = engine.get_baseline_part_number()
+            part_number = engine.BASELINE_PART_NUMBER  # type: ignore[attr-defined]
+            if not part_number:
+                raise AttributeError
         except AttributeError:
             raise HTTPException(
                 status_code=400,
                 detail="Engine does not define a baseline part number.",
             )
 
+    logger.info("QUOTE request: model=%s part_number=%s", model, part_number)
+
     try:
         pricing = engine.price_part_number(part_number)
     except PartNumberError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        logger.info(
+            "QUOTE PartNumberError: model=%s part_number=%s segment=%s invalid=%s",
+            model,
+            part_number,
+            getattr(exc, "segment", None),
+            getattr(exc, "invalid_code", None),
+        )
+        error_payload = {
+            "message": str(exc),
+            "error_type": "part_number_error",
+        }
+        for field in ("segment", "invalid_code", "valid_codes"):
+            if hasattr(exc, field):
+                error_payload[field] = getattr(exc, field)
+        raise HTTPException(status_code=422, detail=error_payload) from exc
 
     return _build_quote_response(pricing)
 
@@ -259,46 +352,59 @@ async def auto_quote(request: AutoQuoteRequest) -> QuoteResponse:
 
     lower_desc = description.lower()
 
-    # Simple model selection heuristic: flow and mag go to QPMAG, otherwise DP
     if "flow" in lower_desc or "mag" in lower_desc or "magmeter" in lower_desc:
+        logger.info("AUTO-QUOTE: routing to QPMAG based on description.")
         nl_result = interpret_qpmag_description(description)
         model = nl_result.get("model", "QPMAG")
     else:
+        logger.info("AUTO-QUOTE: routing to QPSAH200S based on description.")
         nl_result = interpret_qpsah200s_description(description)
         model = nl_result.get("model", "QPSAH200S")
 
-    engine = get_engine(model)
-
     part_number = nl_result.get("part_number")
     if not part_number:
+        logger.error("AUTO-QUOTE NL failed to produce part number. nl_result=%s", nl_result)
         raise HTTPException(
             status_code=500,
             detail="Natural-language interpreter did not return a part number.",
         )
 
+    logger.info(
+        "AUTO-QUOTE NL result: model=%s part_number=%s", model, part_number
+    )
+
+    engine = get_engine(model)
     try:
         pricing = engine.price_part_number(part_number)
     except PartNumberError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        logger.info(
+            "AUTO-QUOTE PartNumberError: model=%s part_number=%s segment=%s invalid=%s",
+            model,
+            part_number,
+            getattr(exc, "segment", None),
+            getattr(exc, "invalid_code", None),
+        )
+        error_payload = {
+            "message": str(exc),
+            "error_type": "part_number_error",
+        }
+        for field in ("segment", "invalid_code", "valid_codes"):
+            if hasattr(exc, field):
+                error_payload[field] = getattr(exc, field)
+        raise HTTPException(status_code=422, detail=error_payload) from exc
 
-    # If NL layer returned a currency, keep it
     if "currency" in nl_result:
         pricing["currency"] = nl_result["currency"]
 
     return _build_quote_response(pricing)
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Phase 2: test PDF generation
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 @app.get("/test-pdf")
 async def test_pdf():
-    """
-    Temporary endpoint to verify server-side PDF generation.
-
-    Returns a simple quote PDF built from hardcoded sample data.
-    """
     sample_segments = [
         {
             "key": "span_range",
@@ -344,16 +450,12 @@ async def test_pdf():
     )
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Phase 3: Microsoft auth + /me test
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 @app.get("/auth/login")
 async def auth_login() -> RedirectResponse:
-    """
-    Start the Microsoft login flow.
-    Redirects the user to the Microsoft sign-in page.
-    """
     app_msal = _get_msal_app()
     flow = app_msal.initiate_auth_code_flow(
         scopes=AZURE_SCOPES,
@@ -363,21 +465,19 @@ async def auth_login() -> RedirectResponse:
     if not state:
         raise HTTPException(status_code=500, detail="Auth flow did not return a state.")
     auth_flows[state] = flow
+    logger.info("AUTH: starting login flow with state=%s", state)
     return RedirectResponse(url=flow["auth_uri"])
 
 
 @app.get("/auth/redirect")
 async def auth_redirect(request: Request) -> HTMLResponse:
-    """
-    Redirect URI endpoint that Microsoft calls after login.
-    Exchanges the auth code for tokens and stores them in memory.
-    """
     global current_tokens
 
     params = dict(request.query_params)
     state = params.get("state")
 
     if not state or state not in auth_flows:
+        logger.warning("AUTH redirect with invalid/missing state=%s", state)
         raise HTTPException(status_code=400, detail="Invalid or missing auth state.")
 
     flow = auth_flows.pop(state)
@@ -388,14 +488,16 @@ async def auth_redirect(request: Request) -> HTMLResponse:
     if "error" in result:
         error = result.get("error")
         desc = result.get("error_description")
+        logger.error("AUTH error from Microsoft: %s - %s", error, desc)
         raise HTTPException(
             status_code=400,
             detail=f"Error from Microsoft identity platform: {error} - {desc}",
         )
 
     current_tokens = result
-
     username = result.get("id_token_claims", {}).get("preferred_username", "Microsoft account")
+    logger.info("AUTH success for user=%s", username)
+
     html = f"""
     <html>
       <body>
@@ -410,9 +512,6 @@ async def auth_redirect(request: Request) -> HTMLResponse:
 
 @app.get("/me")
 async def graph_me() -> JSONResponse:
-    """
-    Simple test endpoint that calls Microsoft Graph /me using the stored access token.
-    """
     access_token = _get_access_token()
 
     async with httpx.AsyncClient() as client:
@@ -423,31 +522,33 @@ async def graph_me() -> JSONResponse:
         )
 
     if resp.status_code != 200:
+        logger.error("Graph /me call failed: status=%s body=%s", resp.status_code, resp.text)
         raise HTTPException(
             status_code=resp.status_code,
             detail=f"Graph /me call failed: {resp.text}",
         )
 
+    logger.info("Graph /me call succeeded.")
     return JSONResponse(resp.json())
 
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Phase 4: create Outlook draft with quote PDF attached
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 @app.post("/create-outlook-draft")
 async def create_outlook_draft(request: CreateDraftRequest) -> JSONResponse:
-    """
-    Create an Outlook draft in the signed-in user's mailbox with the quote PDF attached.
-
-    We do NOT require a recipient address. The draft will appear in Outlook with
-    no To/CC so the user can start typing and use Outlook's auto-complete.
-    """
     access_token = _get_access_token()
     quote = request.quote
 
-    # Prepare data for PDF generation
     segments_for_pdf = [seg.dict() for seg in quote.segments]
+
+    logger.info(
+        "OUTLOOK draft requested for model=%s part_number=%s total_price=%s",
+        quote.model,
+        quote.part_number,
+        quote.total_price,
+    )
 
     pdf_bytes = generate_quote_pdf(
         model=quote.model,
@@ -455,7 +556,7 @@ async def create_outlook_draft(request: CreateDraftRequest) -> JSONResponse:
         total_price=quote.total_price,
         segments=segments_for_pdf,
         currency=quote.currency,
-        customer=None,  # we'll wire in customer info later
+        customer=None,
     )
 
     subject = _build_default_email_subject(quote)
@@ -471,10 +572,17 @@ async def create_outlook_draft(request: CreateDraftRequest) -> JSONResponse:
             pdf_filename=pdf_filename,
         )
     except Exception as exc:
+        logger.exception("Failed to create Outlook draft for part_number=%s", quote.part_number)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create Outlook draft: {exc}",
         ) from exc
+
+    logger.info(
+        "OUTLOOK draft created: id=%s internet_id=%s",
+        draft.get("id"),
+        draft.get("internetMessageId"),
+    )
 
     return JSONResponse(
         {
