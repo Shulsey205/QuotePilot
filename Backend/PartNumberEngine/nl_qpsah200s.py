@@ -70,7 +70,7 @@ DEFAULT_CODES: Dict[str, str] = {
     "housing_material": "C",
     "installation_orientation": "3",
     "electrical_connection": "1",
-    "display": "1",           # With display (matches engine)
+    "display": "1",           # With display
     "mounting_bracket": "C",  # Universal bracket
     "area_classification": "1",  # General purpose
     "optional_features": "02",   # Memory card
@@ -324,7 +324,7 @@ def _extract_span_numeric_value(text: str) -> Optional[float]:
     normalized = re.sub(r"\bdiv(ision)?\s*\d+\b", " ", normalized)
     normalized = re.sub(r"\bzone\s*\d+\b", " ", normalized)
 
-    # Now look for ranges like "0-150 in", "0 to 300 in wc"
+    # Ranges like "0-150 in", "0 to 300 in wc"
     range_matches = re.findall(
         r"(\d+(?:\.\d+)?)\s*[-to]+\s*(\d+(?:\.\d+)?)(?:\s*(in(?:ch(?:es)?)?|inwc|in\s*wc|\"))?",
         normalized,
@@ -337,13 +337,11 @@ def _extract_span_numeric_value(text: str) -> Optional[float]:
             high = float(high_str)
         except ValueError:
             continue
-        # Guard against obviously non-span ranges such as 1-2, 2-3
         if high <= 5:
             continue
         candidates.append(high)
 
-    # Also look for standalone numbers followed by in/inwc etc,
-    # like "150 in wc", "250 inwc", "400 inches of water"
+    # Standalone numbers followed by in/inwc
     single_matches = re.findall(
         r"(\d+(?:\.\d+)?)\s*(in(?:ch(?:es)?)?(?:\s*of\s*water)?|inwc|in\s*wc|\"|iwc)",
         normalized,
@@ -391,39 +389,69 @@ def _apply_rule_table(
 def _apply_span_numeric_hint(
     text: str,
     choices: Dict[str, SegmentChoice],
+    warnings: List[str],
 ) -> None:
+    """
+    Use numeric span information to choose M vs H and emit warnings when
+    we have to clamp to the catalog limits.
+    """
     span_max = _extract_span_numeric_value(text)
     if span_max is None:
         return
 
-    if span_max > 400:
+    # Anything > 1000 is outside the catalog; clamp to H and warn.
+    if span_max > 1000:
+        warnings.append(
+            f"Requested span up to about {span_max:.1f} inWC; "
+            "maximum catalog range is 400–1000 inWC (code H). Using high span (H)."
+        )
         choices["span_range"] = SegmentChoice(
             segment="span_range",
             code="H",
-            reason=f"Inferred span up to {span_max} > 400, using high span (H).",
+            reason=f"Inferred span up to {span_max:.1f} > 1000, clamping to high span (H).",
+            priority=110,
+        )
+        return
+
+    # 400–1000 → H, with a softer note.
+    if span_max > 400:
+        warnings.append(
+            f"Requested span up to about {span_max:.1f} inWC; "
+            "using high span range 400–1000 inWC (code H)."
+        )
+        choices["span_range"] = SegmentChoice(
+            segment="span_range",
+            code="H",
+            reason=f"Inferred span up to {span_max:.1f} > 400, using high span (H).",
             priority=100,
         )
-    else:
-        # Medium range for anything up to and including 400
-        existing = choices.get("span_range")
-        candidate = SegmentChoice(
-            segment="span_range",
-            code="M",
-            reason=f"Inferred span up to {span_max} ≤ 400, using medium span (M).",
-            priority=90,
-        )
-        if existing is None or candidate.priority >= existing.priority:
-            choices["span_range"] = candidate
+        return
+
+    # 0–400 → M, no warning needed (this is the default catalog band).
+    existing = choices.get("span_range")
+    candidate = SegmentChoice(
+        segment="span_range",
+        code="M",
+        reason=f"Inferred span up to {span_max:.1f} ≤ 400, using medium span (M).",
+        priority=90,
+    )
+    if existing is None or candidate.priority >= existing.priority:
+        choices["span_range"] = candidate
 
 
 def _build_segments_from_choices(
     description: str,
     rule_choices: Dict[str, SegmentChoice],
-) -> Tuple[List[Tuple[str, str]], Dict[str, Dict[str, Any]], List[str]]:
+    warnings: List[str],
+) -> Tuple[List[Tuple[str, str]], Dict[str, Dict[str, Any]], List[str], List[str]]:
+    """
+    Build the final segment codes from NL rule choices.
+    Returns (segments, explanations, errors, warnings).
+    """
     segment_explanations: Dict[str, Dict[str, Any]] = {}
     errors: List[str] = []
 
-    _apply_span_numeric_hint(description, rule_choices)
+    _apply_span_numeric_hint(description, rule_choices, warnings)
 
     final_segments: List[Tuple[str, str]] = []
 
@@ -454,7 +482,7 @@ def _build_segments_from_choices(
             "source": source,
         }
 
-    return final_segments, segment_explanations, errors
+    return final_segments, segment_explanations, errors, warnings
 
 
 def _segments_to_part_number(segments: List[Tuple[str, str]]) -> str:
@@ -477,13 +505,17 @@ def interpret_qpsah200s_description(description: str) -> Dict[str, Any]:
             "part_number": str,
             "segments": {segment_name: {...}},
             "errors": [str, ...],
+            "warnings": [str, ...],
         }
     """
     description = (description or "").strip()
+    warnings: List[str] = []
 
     if not description:
-        final_segments, segment_explanations, errors = _build_segments_from_choices(
-            description="", rule_choices={}
+        final_segments, segment_explanations, errors, warnings = _build_segments_from_choices(
+            description="",
+            rule_choices={},
+            warnings=warnings,
         )
         part_number = _segments_to_part_number(final_segments)
         return {
@@ -491,12 +523,14 @@ def interpret_qpsah200s_description(description: str) -> Dict[str, Any]:
             "part_number": part_number,
             "segments": segment_explanations,
             "errors": errors,
+            "warnings": warnings,
         }
 
     rule_choices = _apply_rule_table(description, NL_RULES)
-    final_segments, segment_explanations, errors = _build_segments_from_choices(
+    final_segments, segment_explanations, errors, warnings = _build_segments_from_choices(
         description=description,
         rule_choices=rule_choices,
+        warnings=warnings,
     )
     part_number = _segments_to_part_number(final_segments)
     success = len(errors) == 0
@@ -506,4 +540,5 @@ def interpret_qpsah200s_description(description: str) -> Dict[str, Any]:
         "part_number": part_number,
         "segments": segment_explanations,
         "errors": errors,
+        "warnings": warnings,
     }

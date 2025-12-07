@@ -85,7 +85,7 @@ def _get_msal_app() -> msal.ConfidentialClientApplication:
 app = FastAPI(
     title="QuotePilot API",
     description="Quote engine for QuotePilot demo models with Outlook integration.",
-    version="1.8.0",
+    version="1.9.0",
 )
 
 app.add_middleware(
@@ -134,6 +134,7 @@ class QuoteResponse(BaseModel):
     total_price: float
     currency: str = "USD"
     segments: List[QuoteSegment]
+    warnings: List[str] | None = None
 
 
 class CreateDraftRequest(BaseModel):
@@ -216,7 +217,10 @@ def _normalize_segments(pricing_segments: Any) -> List[QuoteSegment]:
     return normalized
 
 
-def _build_quote_response(pricing: Dict[str, Any]) -> QuoteResponse:
+def _build_quote_response(
+    pricing: Dict[str, Any],
+    warnings: Optional[List[str]] = None,
+) -> QuoteResponse:
     """
     Convert engine pricing dict into the standardized QuoteResponse model.
     """
@@ -239,6 +243,7 @@ def _build_quote_response(pricing: Dict[str, Any]) -> QuoteResponse:
         total_price=float(total_price),
         currency=pricing.get("currency", "USD"),
         segments=segments,
+        warnings=warnings or None,
     )
 
 
@@ -364,6 +369,8 @@ async def auto_quote(request: AutoQuoteRequest) -> QuoteResponse:
             detail="Natural-language interpreter did not return a part number.",
         )
 
+    warnings = list(nl_result.get("warnings") or [])
+
     logger.info(
         "AUTO-QUOTE NL result: model=%s part_number=%s", model, part_number
     )
@@ -388,6 +395,10 @@ async def auto_quote(request: AutoQuoteRequest) -> QuoteResponse:
         if fallback_part:
             logger.info(
                 "AUTO-QUOTE: falling back to baseline part number: %s", fallback_part
+            )
+            warnings.append(
+                "Description could not be matched cleanly to a catalog part; "
+                "using the engine baseline configuration instead."
             )
             try:
                 pricing = engine.price_part_number(fallback_part)
@@ -415,7 +426,7 @@ async def auto_quote(request: AutoQuoteRequest) -> QuoteResponse:
     if "currency" in nl_result:
         pricing["currency"] = nl_result["currency"]
 
-    return _build_quote_response(pricing)
+    return _build_quote_response(pricing, warnings=warnings)
 
 
 # ---------------------------------------------------------------------------

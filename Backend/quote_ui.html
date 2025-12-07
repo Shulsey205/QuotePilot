@@ -221,6 +221,10 @@
         color: #f97373;
       }
 
+      .status.warning {
+        color: #ea580c;
+      }
+
       .results-section {
         margin-top: 22px;
         border-top: 1px solid var(--border-subtle);
@@ -393,7 +397,7 @@
         </header>
 
         <section>
-          <h2>Describe what you need (advanced mode)</h2>
+          <h2>Describe what you need</h2>
           <div class="nl-input-wrapper">
             <textarea
               id="nl-input"
@@ -435,6 +439,7 @@
           </div>
 
           <div id="status" class="status"></div>
+          <div id="warnings" class="status" style="display: none;"></div>
         </section>
 
         <section
@@ -542,6 +547,7 @@
         });
 
       const statusEl = document.getElementById("status");
+      const warningsEl = document.getElementById("warnings");
       const nlInputEl = document.getElementById("nl-input");
       const resultsSectionEl = document.getElementById("results-section");
       const modelEl = document.getElementById("result-model");
@@ -575,6 +581,33 @@
         } else {
           statusEl.classList.remove("error");
         }
+      }
+
+      function setWarnings(flatResult) {
+        if (!warningsEl) return;
+
+        // Clear when nothing or no success
+        if (!flatResult || !flatResult.success) {
+          warningsEl.textContent = "";
+          warningsEl.style.display = "none";
+          warningsEl.classList.remove("warning");
+          return;
+        }
+
+        const warnings = Array.isArray(flatResult.warnings)
+          ? flatResult.warnings
+          : [];
+
+        if (!warnings.length) {
+          warningsEl.textContent = "";
+          warningsEl.style.display = "none";
+          warningsEl.classList.remove("warning");
+          return;
+        }
+
+        warningsEl.style.display = "block";
+        warningsEl.classList.add("warning");
+        warningsEl.textContent = warnings.join(" ");
       }
 
       function setEmailStatus(message, isError = false) {
@@ -615,6 +648,7 @@
             btnOutlookDraft.disabled = true;
           }
           setEmailStatus("");
+          setWarnings(null);
           return;
         }
 
@@ -678,6 +712,7 @@
             "Create an Outlook draft with this quote attached.";
         }
         setEmailStatus("");
+        setWarnings(flatResult);
       }
 
       // Helper: convert snake_case to "Pretty words"
@@ -748,10 +783,12 @@
         const description = nlInputEl.value.trim();
         if (!description) {
           setStatus("Please enter a brief description of what you need.", true);
+          setWarnings(null);
           return;
         }
 
         setStatus("Generating quote…");
+        setWarnings(null);
         btnAutoQuote.disabled = true;
         if (btnExactQuote) {
           btnExactQuote.disabled = true;
@@ -817,14 +854,17 @@
 
         if (!model) {
           setStatus("Enter a model before pricing an exact part number.", true);
+          setWarnings(null);
           return;
         }
         if (!partNumber) {
           setStatus("Enter a full part number to price.", true);
+          setWarnings(null);
           return;
         }
 
         setStatus("Pricing exact part number…");
+        setWarnings(null);
         btnExactQuote.disabled = true;
         if (btnAutoQuote) {
           btnAutoQuote.disabled = true;
@@ -890,6 +930,7 @@
         if (partInputEl) partInputEl.value = "";
         renderQuote(null);
         setStatus("");
+        setWarnings(null);
         setEmailStatus("");
       }
 
