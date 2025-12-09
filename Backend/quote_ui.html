@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>QuotePilot Demo</title>
@@ -7,128 +7,127 @@
 
     <style>
       :root {
-        --bg-page: #f3f4f6;
-        --bg-card: #ffffff;
-        --bg-card-soft: #f9fafb;
-        --border-subtle: #e5e7eb;
-        --text-main: #111827;
-        --text-muted: #6b7280;
-        --text-soft: #9ca3af;
-        --primary: #2563eb;
-        --primary-strong: #1d4ed8;
-        --primary-soft: rgba(37, 99, 235, 0.08);
-        --button-secondary-bg: #e5e7eb;
-        --button-secondary-hover: #d1d5db;
-        --button-outline-bg: #ffffff;
-        --button-outline-border: #d1d5db;
-        --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.08);
-        --shadow-primary: 0 8px 20px rgba(37, 99, 235, 0.45);
-        --input-border: #d1d5db;
-        --table-header-bg: #f9fafb;
-      }
-
-      html[data-theme="dark"] {
-        --bg-page: #020617;
-        --bg-card: #020617;
+        --bg-page: radial-gradient(circle at top left, #111827 0, #020617 45%, #020617 100%);
+        --bg-card: rgba(15, 23, 42, 0.98);
         --bg-card-soft: #020617;
-        --border-subtle: #1f2937;
-        --text-main: #e5e7eb;
+        --border-subtle: rgba(148, 163, 184, 0.3);
+        --text-main: #f9fafb;
         --text-muted: #9ca3af;
         --text-soft: #6b7280;
-        --primary: #60a5fa;
-        --primary-strong: #3b82f6;
-        --primary-soft: rgba(96, 165, 250, 0.2);
+        --primary: #6366f1;
+        --primary-strong: #4f46e5;
+        --primary-soft: rgba(99, 102, 241, 0.22);
         --button-secondary-bg: #111827;
         --button-secondary-hover: #1f2937;
         --button-outline-bg: #020617;
         --button-outline-border: #374151;
-        --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.9);
-        --shadow-primary: 0 10px 26px rgba(59, 130, 246, 0.6);
+        --shadow-card: 0 20px 60px rgba(15, 23, 42, 0.9);
+        --shadow-primary: 0 16px 40px rgba(79, 70, 229, 0.7);
         --input-border: #374151;
         --table-header-bg: #020617;
+        --error-bg: #451717;
+        --error-border: #7f1d1d;
+        --error-text: #fecaca;
+        --note-text: #fbbf24;
       }
 
-      :root {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        color: var(--text-main);
-        background-color: var(--bg-page);
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
       }
 
       body {
         margin: 0;
         padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        color: var(--text-main);
         background: var(--bg-page);
+        -webkit-font-smoothing: antialiased;
       }
 
       .page {
-        max-width: 960px;
-        margin: 24px auto 40px auto;
-        padding: 16px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
 
-      .card {
-        background: var(--bg-card);
-        border-radius: 10px;
-        padding: 20px 24px;
-        box-shadow: var(--shadow-card);
-        border: 1px solid var(--border-subtle);
+      .shell {
+        width: 100%;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      main {
+        flex: 1;
       }
 
       header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        padding: 8px 0 24px;
         gap: 16px;
-        margin-bottom: 20px;
       }
 
-      .logo-wrapper {
-        display: flex;
+      .brand {
+        display: inline-flex;
         align-items: center;
         gap: 10px;
+        text-decoration: none;
       }
 
-      .logo-svg {
-        width: 120px;
-        height: auto;
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: radial-gradient(circle at 0 0, #a855f7 0, #6366f1 45%, #1d4ed8 100%);
+        box-shadow: 0 12px 32px rgba(79, 70, 229, 0.6);
       }
 
-      .header-text {
+      .brand-name {
+        font-size: 19px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #e5e7eb;
+      }
+
+      .brand:hover .brand-name {
+        opacity: 0.85;
+      }
+
+      .header-right {
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
       }
 
       .tagline {
-        font-size: 14px;
-        color: var(--text-muted);
-      }
-
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .theme-toggle {
-        border-radius: 999px;
-        border: 1px solid var(--button-outline-border);
-        padding: 6px 12px;
         font-size: 13px;
-        background: var(--button-outline-bg);
-        color: var(--text-main);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        color: var(--text-muted);
+        text-align: right;
       }
 
-      .theme-toggle span.icon {
-        font-size: 14px;
+      .card {
+        background: linear-gradient(
+          to bottom right,
+          rgba(15, 23, 42, 0.98),
+          rgba(15, 23, 42, 0.99)
+        );
+        border-radius: 18px;
+        padding: 22px 24px 20px;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-subtle);
       }
 
       h2 {
-        margin: 18px 0 10px 0;
+        margin: 4px 0 10px 0;
         font-size: 18px;
       }
 
@@ -139,7 +138,7 @@
       textarea {
         width: 100%;
         min-height: 80px;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid var(--input-border);
         padding: 10px 12px;
         resize: vertical;
@@ -156,23 +155,29 @@
         box-shadow: 0 0 0 1px var(--primary-soft);
       }
 
+      .hint {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
       .button-row {
-        margin-top: 12px;
+        margin-top: 14px;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
 
       button {
-        border-radius: 8px;
+        border-radius: 999px;
         border: none;
-        padding: 8px 16px;
+        padding: 9px 18px;
         font-size: 14px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: var(--primary);
+        background: radial-gradient(circle at top left, var(--primary), var(--primary-strong));
         color: #ffffff;
         transition: background 0.15s ease, transform 0.05s ease,
           box-shadow 0.1s ease;
@@ -199,8 +204,11 @@
       }
 
       button:hover:not(:disabled) {
-        background: var(--primary-strong);
         transform: translateY(-1px);
+      }
+
+      button:not(.secondary):not(.outline):hover:not(:disabled) {
+        background: radial-gradient(circle at top left, var(--primary-strong), var(--primary));
       }
 
       button.secondary:hover:not(:disabled) {
@@ -218,11 +226,33 @@
       }
 
       .status.error {
-        color: #f97373;
+        color: var(--error-text);
       }
 
-      .status.warning {
-        color: #ea580c;
+      .notes {
+        margin-top: 4px;
+        font-size: 13px;
+        color: var(--note-text);
+      }
+
+      .notes ul {
+        margin: 4px 0 0 16px;
+        padding: 0;
+      }
+
+      .notes li {
+        margin: 2px 0;
+      }
+
+      .error-box {
+        display: none;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--error-border);
+        background: var(--error-bg);
+        color: var(--error-text);
+        font-size: 13px;
       }
 
       .results-section {
@@ -295,7 +325,7 @@
       }
 
       .advanced-row {
-        margin-top: 16px;
+        margin-top: 18px;
         padding-top: 12px;
         border-top: 1px dashed var(--border-subtle);
         display: flex;
@@ -312,7 +342,7 @@
       }
 
       .advanced-row input[type="text"] {
-        border-radius: 6px;
+        border-radius: 8px;
         border: 1px solid var(--input-border);
         padding: 6px 8px;
         font-size: 13px;
@@ -328,19 +358,18 @@
       }
 
       @media (max-width: 640px) {
-        .results-header {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
         header {
           flex-direction: column;
           align-items: flex-start;
         }
 
-        .header-actions {
-          align-self: stretch;
-          justify-content: flex-end;
+        .header-right {
+          align-items: flex-start;
+        }
+
+        .results-header {
+          flex-direction: column;
+          align-items: flex-start;
         }
 
         .advanced-row {
@@ -355,199 +384,140 @@
 
   <body>
     <div class="page">
-      <div class="card">
+      <div class="shell">
         <header>
-          <div class="logo-wrapper">
-            <svg
-              class="logo-svg"
-              viewBox="0 0 220 120"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M10 20 L210 60 L10 100 L40 60 Z"
-                fill="none"
-                stroke="#333"
-                stroke-width="4"
-                stroke-linejoin="round"
-                stroke-linecap="round"
-              />
-              <text
-                x="110"
-                y="115"
-                font-family="Arial, Helvetica, sans-serif"
-                font-size="28"
-                text-anchor="middle"
-                fill="#333"
-              >
-                QuotePilot
-              </text>
-            </svg>
-          </div>
-          <div class="header-text">
+          <a href="/" class="brand">
+            <div class="brand-mark"></div>
+            <div class="brand-name">QuotePilot</div>
+          </a>
+          <div class="header-right">
             <div class="tagline">
-              Natural language to configured part numbers and quotes
+              Demo · Natural language to configured part numbers and quotes
             </div>
-          </div>
-          <div class="header-actions">
-            <button id="theme-toggle" type="button" class="theme-toggle">
-              <span class="icon" id="theme-icon">🌙</span>
-              <span id="theme-label">Dark</span>
-            </button>
           </div>
         </header>
 
-        <section>
-          <h2>Describe what you need</h2>
-          <div class="nl-input-wrapper">
-            <textarea
-              id="nl-input"
-              placeholder="Example: One inch mag meter, PTFE liner, explosion-proof mounting, 4–20 mA output."
-            ></textarea>
-          </div>
-          <div class="button-row">
-            <button id="btn-auto-quote" type="button">
-              Generate quote
-            </button>
-            <button id="btn-clear" type="button" class="secondary">
-              Clear
-            </button>
-          </div>
+        <main>
+          <div class="card">
+            <section>
+              <h2>Describe what you need</h2>
+              <div class="nl-input-wrapper">
+                <textarea
+                  id="nl-input"
+                  placeholder="Example: One inch mag meter, PTFE liner, explosion proof mounting, 4 to 20 mA output."
+                ></textarea>
+              </div>
+              <div class="hint">
+                Try: “DP transmitter, 0 to 150 inch range, stainless wetted parts, explosion proof housing”
+              </div>
 
-          <div class="advanced-row">
-            <span>Advanced: price an exact part number</span>
-            <label>
-              Model
-              <input
-                type="text"
-                id="model-input"
-                placeholder="QPSAH200S or QPMAG"
-                style="width: 150px;"
-              />
-            </label>
-            <label>
-              Part number
-              <input
-                type="text"
-                id="part-input"
-                placeholder="Paste full part number"
-                style="min-width: 220px;"
-              />
-            </label>
-            <button id="btn-exact-quote" type="button" class="outline">
-              Price exact part
-            </button>
-          </div>
+              <div class="button-row">
+                <button id="btn-auto-quote" type="button">
+                  Generate quote
+                </button>
+                <button id="btn-clear" type="button" class="secondary">
+                  Clear
+                </button>
+              </div>
 
-          <div id="status" class="status"></div>
-          <div id="warnings" class="status" style="display: none;"></div>
-        </section>
+              <div class="advanced-row">
+                <span>Advanced: price an exact part number</span>
+                <label>
+                  Model
+                  <input
+                    type="text"
+                    id="model-input"
+                    placeholder="QPSAH200S or QPMAG"
+                    style="width: 150px;"
+                  />
+                </label>
+                <label>
+                  Part number
+                  <input
+                    type="text"
+                    id="part-input"
+                    placeholder="Paste full part number"
+                    style="min-width: 220px;"
+                  />
+                </label>
+                <button id="btn-exact-quote" type="button" class="outline">
+                  Price exact part
+                </button>
+              </div>
 
-        <section
-          class="results-section"
-          id="results-section"
-          style="display: none;"
-        >
-          <div class="results-header">
-            <div class="result-main">
-              <div class="result-label">Model</div>
-              <div class="result-value" id="result-model"></div>
-            </div>
-            <div class="result-main">
-              <div class="result-label">Part number</div>
-              <div class="result-value" id="result-part-number"></div>
-            </div>
-            <div>
-              <div class="result-label">Total price</div>
-              <div class="result-value price-value" id="result-price"></div>
-            </div>
-          </div>
+              <div id="status" class="status"></div>
+              <div id="notes" class="notes"></div>
+              <div id="error-box" class="error-box"></div>
+            </section>
 
-          <div>
-            <div class="result-label">Segment breakdown</div>
-            <table id="segments-table">
-              <thead>
-                <tr>
-                  <th>Segment</th>
-                  <th>Code</th>
-                  <th>Description</th>
-                  <th>Adder</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <div class="action-row">
-            <button id="btn-download-pdf" type="button" class="outline">
-              Download PDF
-            </button>
-            <button
-              id="btn-outlook-draft"
-              type="button"
-              class="secondary"
-              disabled
-              title="Create an Outlook draft with this quote attached."
+            <section
+              class="results-section"
+              id="results-section"
+              style="display: none;"
             >
-              Send to Outlook
-            </button>
-          </div>
-          <div class="outlook-hint">
-            Send this quote directly to Outlook as a draft email with the quote
-            PDF attached.
-          </div>
-          <div id="email-status" class="status"></div>
+              <div class="results-header">
+                <div class="result-main">
+                  <div class="result-label">Model</div>
+                  <div class="result-value" id="result-model"></div>
+                </div>
+                <div class="result-main">
+                  <div class="result-label">Part number</div>
+                  <div class="result-value" id="result-part-number"></div>
+                </div>
+                <div>
+                  <div class="result-label">Total price</div>
+                  <div class="result-value price-value" id="result-price"></div>
+                </div>
+              </div>
 
-          <div class="footer-note">
-            This is a prototype demo of QuotePilot. Prices and configurations
-            are for demonstration only.
+              <div>
+                <div class="result-label">Segment breakdown</div>
+                <table id="segments-table">
+                  <thead>
+                    <tr>
+                      <th>Segment</th>
+                      <th>Code</th>
+                      <th>Description</th>
+                      <th>Adder</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+              <div class="action-row">
+                <button id="btn-download-pdf" type="button" class="outline">
+                  Download PDF
+                </button>
+                <button
+                  id="btn-outlook-draft"
+                  type="button"
+                  class="secondary"
+                  disabled
+                  title="Create an Outlook draft with this quote attached."
+                >
+                  Send to Outlook
+                </button>
+              </div>
+              <div class="outlook-hint">
+                Send this quote directly to Outlook as a draft email with the quote PDF attached.
+              </div>
+              <div id="email-status" class="status"></div>
+
+              <div class="footer-note">
+                This is a prototype demo of QuotePilot. Prices and configurations
+                are for demonstration only.
+              </div>
+            </section>
           </div>
-        </section>
+        </main>
       </div>
     </div>
 
     <script>
-      // Theme handling shared logic
-      function applyTheme(theme) {
-        const html = document.documentElement;
-        html.setAttribute("data-theme", theme);
-        localStorage.setItem("qp_theme", theme);
-
-        const label = document.getElementById("theme-label");
-        const icon = document.getElementById("theme-icon");
-        if (label && icon) {
-          if (theme === "dark") {
-            label.textContent = "Light";
-            icon.textContent = "☀️";
-          } else {
-            label.textContent = "Dark";
-            icon.textContent = "🌙";
-          }
-        }
-      }
-
-      (function initThemeFromStorage() {
-        const stored = localStorage.getItem("qp_theme");
-        const prefersDark =
-          window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-        if (stored === "dark" || stored === "light") {
-          applyTheme(stored);
-        } else {
-          applyTheme(prefersDark ? "dark" : "light");
-        }
-      })();
-
-      document
-        .getElementById("theme-toggle")
-        .addEventListener("click", () => {
-          const current =
-            document.documentElement.getAttribute("data-theme") || "light";
-          applyTheme(current === "light" ? "dark" : "light");
-        });
-
       const statusEl = document.getElementById("status");
-      const warningsEl = document.getElementById("warnings");
+      const notesEl = document.getElementById("notes");
+      const errorBoxEl = document.getElementById("error-box");
       const nlInputEl = document.getElementById("nl-input");
       const resultsSectionEl = document.getElementById("results-section");
       const modelEl = document.getElementById("result-model");
@@ -570,44 +540,58 @@
       let lastQuote = null;
 
       function setStatus(message, isError = false) {
-        if (!message) {
-          statusEl.textContent = "";
-          statusEl.classList.remove("error");
-          return;
-        }
-        statusEl.textContent = message;
-        if (isError) {
-          statusEl.classList.add("error");
-        } else {
-          statusEl.classList.remove("error");
-        }
+        statusEl.textContent = message || "";
+        statusEl.classList.toggle("error", !!isError);
       }
 
-      function setWarnings(flatResult) {
-        if (!warningsEl) return;
+      function setNotes(warnings) {
+        if (!warnings || !warnings.length) {
+          notesEl.textContent = "";
+          notesEl.style.display = "none";
+          return;
+        }
+        const items = warnings
+          .map((w) => `<li>${w}</li>`)
+          .join("");
+        notesEl.innerHTML = `<ul>${items}</ul>`;
+        notesEl.style.display = "block";
+      }
 
-        // Clear when nothing or no success
-        if (!flatResult || !flatResult.success) {
-          warningsEl.textContent = "";
-          warningsEl.style.display = "none";
-          warningsEl.classList.remove("warning");
+      function clearErrorBox() {
+        if (!errorBoxEl) return;
+        errorBoxEl.style.display = "none";
+        errorBoxEl.innerHTML = "";
+      }
+
+      function showErrorBoxFromDetail(detail) {
+        if (!errorBoxEl) return;
+        if (!detail || detail.error_type !== "part_number_error") {
+          errorBoxEl.style.display = "none";
+          errorBoxEl.innerHTML = "";
           return;
         }
 
-        const warnings = Array.isArray(flatResult.warnings)
-          ? flatResult.warnings
-          : [];
+        const seg = detail.segment || "Unknown segment";
+        const invalid = detail.invalid_code || "invalid";
+        const valid = Array.isArray(detail.valid_codes)
+          ? detail.valid_codes.join(", ")
+          : "";
+        const message =
+          detail.message ||
+          `Invalid code ${invalid} for ${seg}${
+            valid ? `. Valid codes: ${valid}.` : "."
+          }`;
 
-        if (!warnings.length) {
-          warningsEl.textContent = "";
-          warningsEl.style.display = "none";
-          warningsEl.classList.remove("warning");
-          return;
+        let html = `<div><strong>Invalid part number</strong></div>`;
+        html += `<div>Segment: ${seg}</div>`;
+        html += `<div>Invalid code: ${invalid}</div>`;
+        if (valid) {
+          html += `<div>Valid codes: ${valid}</div>`;
         }
+        html += `<div style="margin-top:4px;">${message}</div>`;
 
-        warningsEl.style.display = "block";
-        warningsEl.classList.add("warning");
-        warningsEl.textContent = warnings.join(" ");
+        errorBoxEl.innerHTML = html;
+        errorBoxEl.style.display = "block";
       }
 
       function setEmailStatus(message, isError = false) {
@@ -618,10 +602,7 @@
           emailStatusEl.innerHTML = "";
           return;
         }
-        emailStatusEl.classList.remove("error");
-        if (isError) {
-          emailStatusEl.classList.add("error");
-        }
+        emailStatusEl.classList.toggle("error", !!isError);
         emailStatusEl.textContent = message;
       }
 
@@ -648,9 +629,11 @@
             btnOutlookDraft.disabled = true;
           }
           setEmailStatus("");
-          setWarnings(null);
+          setNotes(null);
           return;
         }
+
+        clearErrorBox();
 
         const model = flatResult.model || "";
         const partNumber =
@@ -711,11 +694,11 @@
           btnOutlookDraft.title =
             "Create an Outlook draft with this quote attached.";
         }
+
+        setNotes(flatResult.warnings || []);
         setEmailStatus("");
-        setWarnings(flatResult);
       }
 
-      // Helper: convert snake_case to "Pretty words"
       function formatSegmentName(segKey) {
         if (!segKey) return "this segment";
         const spaced = String(segKey)
@@ -725,13 +708,10 @@
         return spaced.charAt(0).toUpperCase() + spaced.slice(1);
       }
 
-      // New helper: extract a good error message from FastAPI responses
       function extractErrorMessage(status, bodyText, json) {
-        // PartNumberError or standard HTTPException
         if (json && json.detail) {
           const detail = json.detail;
 
-          // Validation errors: [{"msg": "...", ...}]
           if (Array.isArray(detail)) {
             const msgs = detail
               .map((d) => d.msg || d.message || "")
@@ -741,12 +721,10 @@
             }
           }
 
-          // detail is a string
           if (typeof detail === "string") {
             return detail;
           }
 
-          // detail is an object
           if (typeof detail === "object") {
             if (detail.error_type === "part_number_error") {
               const segKey = detail.segment || "";
@@ -771,7 +749,6 @@
           }
         }
 
-        // If we have plain text from the server, use that
         if (bodyText && bodyText.trim()) {
           return bodyText.trim();
         }
@@ -783,12 +760,14 @@
         const description = nlInputEl.value.trim();
         if (!description) {
           setStatus("Please enter a brief description of what you need.", true);
-          setWarnings(null);
+          setNotes(null);
+          clearErrorBox();
           return;
         }
 
         setStatus("Generating quote…");
-        setWarnings(null);
+        setNotes(null);
+        clearErrorBox();
         btnAutoQuote.disabled = true;
         if (btnExactQuote) {
           btnExactQuote.disabled = true;
@@ -799,40 +778,32 @@
         }
 
         try {
-          const body = {
-            description: description,
-          };
+          const body = { description };
 
           const response = await fetch("/auto-quote", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
 
-          if (!response.ok) {
-            const text = await response.text();
-            let json = null;
-            try {
-              json = JSON.parse(text);
-            } catch (_) {
-              json = null;
-            }
+          const text = await response.text();
+          let json = null;
+          try {
+            json = JSON.parse(text);
+          } catch (_) {
+            json = null;
+          }
 
-            console.error("Server error body:", text);
+          if (!response.ok) {
+            console.error("AUTO-QUOTE error body:", text);
             const message = extractErrorMessage(response.status, text, json);
             setStatus(message, true);
             renderQuote(null);
             return;
           }
 
-          const data = await response.json();
-
-          const flatResult = {
-            success: true,
-            ...data,
-          };
+          const data = json || {};
+          const flatResult = { success: true, ...data };
 
           renderQuote(flatResult);
           setStatus("Quote generated.");
@@ -842,9 +813,7 @@
           renderQuote(null);
         } finally {
           btnAutoQuote.disabled = false;
-          if (btnExactQuote) {
-            btnExactQuote.disabled = false;
-          }
+          if (btnExactQuote) btnExactQuote.disabled = false;
         }
       }
 
@@ -854,37 +823,27 @@
 
         if (!model) {
           setStatus("Enter a model before pricing an exact part number.", true);
-          setWarnings(null);
           return;
         }
         if (!partNumber) {
           setStatus("Enter a full part number to price.", true);
-          setWarnings(null);
           return;
         }
 
         setStatus("Pricing exact part number…");
-        setWarnings(null);
+        setNotes(null);
+        clearErrorBox();
         btnExactQuote.disabled = true;
-        if (btnAutoQuote) {
-          btnAutoQuote.disabled = true;
-        }
+        if (btnAutoQuote) btnAutoQuote.disabled = true;
         setEmailStatus("");
-        if (btnOutlookDraft) {
-          btnOutlookDraft.disabled = true;
-        }
+        if (btnOutlookDraft) btnOutlookDraft.disabled = true;
 
         try {
-          const body = {
-            model: model,
-            part_number: partNumber,
-          };
+          const body = { model, part_number: partNumber };
 
           const response = await fetch("/quote", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
 
@@ -898,29 +857,36 @@
 
           if (!response.ok) {
             console.error("QUOTE error body:", text);
-            const message = extractErrorMessage(response.status, text, json);
-            setStatus(message, true);
-            renderQuote(null);
+            const detail = json && json.detail ? json.detail : null;
+
+            if (detail && detail.error_type === "part_number_error") {
+              showErrorBoxFromDetail(detail);
+              const msg = extractErrorMessage(response.status, text, json);
+              setStatus(msg, true);
+              renderQuote(null);
+            } else {
+              setStatus(
+                extractErrorMessage(response.status, text, json),
+                true
+              );
+              renderQuote(null);
+            }
             return;
           }
 
+          clearErrorBox();
           const data = json || {};
-          const flatResult = {
-            success: true,
-            ...data,
-          };
+          const flatResult = { success: true, ...data };
 
           renderQuote(flatResult);
-          setStatus("Exact part-number quote generated.");
+          setStatus("Exact part number quote generated.");
         } catch (err) {
           console.error(err);
           setStatus("An error occurred while pricing the part number.", true);
           renderQuote(null);
         } finally {
           btnExactQuote.disabled = false;
-          if (btnAutoQuote) {
-            btnAutoQuote.disabled = false;
-          }
+          if (btnAutoQuote) btnAutoQuote.disabled = false;
         }
       }
 
@@ -930,7 +896,8 @@
         if (partInputEl) partInputEl.value = "";
         renderQuote(null);
         setStatus("");
-        setWarnings(null);
+        setNotes(null);
+        clearErrorBox();
         setEmailStatus("");
       }
 
@@ -941,10 +908,7 @@
         }
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-          unit: "pt",
-          format: "a4",
-        });
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
 
         const marginLeft = 50;
         let y = 60;
@@ -1058,9 +1022,7 @@
         }
 
         setEmailStatus("Creating Outlook draft…");
-        if (btnOutlookDraft) {
-          btnOutlookDraft.disabled = true;
-        }
+        if (btnOutlookDraft) btnOutlookDraft.disabled = true;
 
         const payload = {
           quote: {
@@ -1077,9 +1039,7 @@
         try {
           const response = await fetch("/create-outlook-draft", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
 
